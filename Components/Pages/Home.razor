@@ -12,23 +12,42 @@
 
 <PageTitle>Github Star Search</PageTitle>
 
-<MudPaper Class="pa-4 mt-4">
-    <MudStack>
-        <MudTextField @bind-Value="GithubUsername" Label="Github Username"
-                      Placeholder="Enter your Github username"/>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SubmitUsername">(Re)-Index
-            full text search
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" DropShadow="false" Disabled="true">Clear</MudButton>
-    </MudStack>
-</MudPaper>
+<MudGrid>
+    <!-- GitHub Username Input Section -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" Class="mb-1">Enter your GitHub Username</MudText>
+                <MudTextField @bind-Value="GithubUsername"
+                              Placeholder="Enter your GitHub username..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Person"
+                              Class="mb-2" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitUsername" Class="mt-1">
+                    Re-Index Repositories
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
 
-<MudPaper Class="pa-4 mt-4">
-    <MudTextField T="string" DebounceInterval="300" OnDebounceIntervalElapsed="Search" Label="Search"
-                  Variant="Variant.Text"
-                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
-                  HelperText="Searches in your starred repositories"/>
-</MudPaper>
+    <!-- Search Bar Section -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" Class="mb-1">Search Starred Repositories</MudText>
+                <MudTextField T="string"
+                              DebounceInterval="300"
+                              OnDebounceIntervalElapsed="Search"
+                              Placeholder="Search starred repositories..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              HelperText="Search by typing repository names or keywords" />
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @if (_searchResults.Any())
 {
@@ -44,7 +63,8 @@
 
                 <MudCardContent>
                     <MudText Typo="Typo.body1">@repository.Description</MudText>
-                    <MudText Typo="Typo.caption">Last Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
+                    <MudText Typo="Typo.caption">Last
+                        Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
                 </MudCardContent>
 
                 <MudCardActions>
@@ -53,18 +73,17 @@
                     </MudButton>
                 </MudCardActions>
             </MudCard>
-
         }
-    </MudPaper>   
+    </MudPaper>
 }
 else
 {
     <MudPaper Class="pa-4 mt-4">
         <MudText Typo="Typo.h5">How to Use GitHub Star Search</MudText>
-        <MudDivider Class="my-2" />
+        <MudDivider Class="my-2"/>
 
         <MudText Typo="Typo.body1">
-            1. Enter your GitHub username in the input field and click on <strong>(Re)-Index Full Text Search</strong>. 
+            1. Enter your GitHub username in the input field and click on <strong>(Re)-Index Full Text Search</strong>.
             You only need to perform this step once to set up the search functionality.
         </MudText>
 
@@ -76,14 +95,13 @@ else
             3. The results will appear instantly as you type.
         </MudText>
 
-        <MudDivider Class="my-2" />
+        <MudDivider Class="my-2"/>
         <MudText Typo="Typo.caption" Class="text-secondary">
             Note: Ensure your GitHub profile is accessible to the app for the indexing process.
             We do not browser private repositories.
             Some users do not have public star data available.
         </MudText>
     </MudPaper>
-
 }
 
 @code {
