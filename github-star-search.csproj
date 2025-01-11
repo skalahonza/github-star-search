@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>github_star_search</RootNamespace>
-    <AssemblyName>`$(AssemblyName.Replace(' ', '_'))</AssemblyName>
+    <RootNamespace>GithubStarSearch</RootNamespace>
+    <AssemblyName>GithubStarSearch</AssemblyName>
   </PropertyGroup>
   
   <ItemGroup>

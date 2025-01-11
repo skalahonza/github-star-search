@@ -1,5 +1,6 @@
 using MudBlazor.Services;
-using github_star_search.Components;
+using GithubStarSearch.Components;
+using GithubStarSearch.Searching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,8 @@ builder.Services.AddMudServices();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.AddMeilisearch();
 
 var app = builder.Build();
 

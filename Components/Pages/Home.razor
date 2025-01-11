@@ -1,7 +1,10 @@
 ﻿@page "/"
+@using GithubStarSearch.Searching
 @using Octokit
+@using Repository = GithubStarSearch.Searching.Repository
 
 @inject ILogger<Home> Logger
+@inject SearchService SearchService
 
 <PageTitle>Github Star Search</PageTitle>
 
@@ -54,13 +57,16 @@
         var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
 
         Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
-        foreach (var repository in starred)
-        {
-            Logger.LogDebug("Indexing repository {Repository} starred by {Username}",
-                repository.FullName,
-                GithubUsername);
-        }
-        
+        await SearchService.IndexRepositories(starred.Select(x => new Repository
+        { 
+            Id = x.Id,
+            Slug = x.Name,
+            Owner = x.Owner.Login,
+            Url = x.Url,
+            UpdatedAt = x.UpdatedAt,
+            StarredBy = GithubUsername,
+            Description = x.Description,
+        }));
         Logger.LogInformation("User {Username} onboarded successfully", GithubUsername);
     }
 
