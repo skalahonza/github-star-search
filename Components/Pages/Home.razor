@@ -31,18 +31,34 @@
 </MudPaper>
 
 <MudPaper Class="pa-4 mt-4">
-    <ul>
-        @foreach (var result in _searchResults)
-        {
-            <li>@result</li>
-        }
-    </ul>
+    @foreach (var repository in _searchResults)
+    {
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@repository.Slug</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            <MudCardContent>
+                <MudText Typo="Typo.body1">@repository.Description</MudText>
+                <MudText Typo="Typo.caption">Last Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
+            </MudCardContent>
+
+            <MudCardActions>
+                <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank">
+                    View Repository
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+
+    }
 </MudPaper>
 
 
 @code {
     public string GithubUsername { get; set; } = "";
-    private readonly List<string> _searchResults = new();
+    private readonly List<Repository> _searchResults = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -96,7 +112,7 @@
             Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
             Slug = x.Name,
             Owner = x.Owner.Login,
-            Url = x.Url,
+            Url = x.HtmlUrl,
             UpdatedAt = x.UpdatedAt,
             StarredBy = GithubUsername,
             Description = x.Description,
@@ -113,7 +129,7 @@
         }
 
         var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
-        _searchResults.AddRange(results.Select(x => x.Slug + " - " + x.StarredBy));
+        _searchResults.AddRange(results);
     }
 
 }
