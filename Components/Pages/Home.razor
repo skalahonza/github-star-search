@@ -1,0 +1,87 @@
+﻿@page "/"
+@using Octokit
+
+@inject ILogger<Home> Logger
+
+<PageTitle>Github Star Search</PageTitle>
+
+<MudPaper Class="pa-4 mt-4">
+    <MudStack>
+        <MudTextField @bind-Value="GithubUsername" Label="Github Username"
+                      Placeholder="Enter your Github username"/>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SubmitUsername">(Re)-Index full text search</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" DropShadow="false" Disabled="true">Clear</MudButton>
+    </MudStack>
+</MudPaper>
+
+<MudPaper Class="pa-4 mt-4">
+    <MudTextField T="string" DebounceInterval="300" OnDebounceIntervalElapsed="Search" Label="Search" Variant="Variant.Text"
+                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                  HelperText="Searches in your starred repositories"/>
+</MudPaper>
+
+<MudPaper Class="pa-4 mt-4">
+    <ul>
+        @foreach (var result in _searchResults)
+        {
+            <li>@result</li>
+        }
+    </ul>
+</MudPaper>
+
+
+@code {
+    public string GithubUsername { get; set; } = "";
+    private readonly List<string> _searchResults = new();
+
+    private async Task SubmitUsername()
+    {
+        // index user repos
+        Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
+        Logger.LogInformation("Initializing github client");
+        var github = new GitHubClient(new ProductHeaderValue("GithubStarSearch"));
+
+        Logger.LogInformation("Fetching user {Username} data", GithubUsername);
+        var user = await github.User.Get(GithubUsername);
+
+        if (user is null)
+        {
+            Logger.LogWarning("User {Username} not found", GithubUsername);
+            return;
+        }
+
+        Logger.LogInformation("Fetching user {Username} starred repositories", GithubUsername);
+        var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
+
+        Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
+        foreach (var repository in starred)
+        {
+            Logger.LogDebug("Indexing repository {Repository} starred by {Username}",
+                repository.FullName,
+                GithubUsername);
+        }
+        
+        Logger.LogInformation("User {Username} onboarded successfully", GithubUsername);
+    }
+
+    private async Task Search(string searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            _searchResults.Clear();
+        }
+        else
+        {
+            _searchResults.Clear();
+            for (int i = 0; i < 10; i++)
+            {
+                await Task.Delay(100);
+                _searchResults.Add($"Result {i} for {searchQuery}");
+                StateHasChanged();
+            }
+        }
+
+        // await InvokeAsync(StateHasChanged);
+    }
+
+}

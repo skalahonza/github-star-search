@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "GithubStarSearch": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7127",
-      "launchBrowser": false
-    }
-  }
-}

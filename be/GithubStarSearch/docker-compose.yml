@@ -1,7 +1,0 @@
-services:
-  meilisearch:
-    image: getmeili/meilisearch:v1.10
-    environment:
-      MEILI_MASTER_KEY: "ChangeMe"
-    ports:
-      - "7701:7700"
