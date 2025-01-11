@@ -12,7 +12,31 @@
 
 <PageTitle>Github Star Search</PageTitle>
 
-<MudGrid>
+@if (string.IsNullOrEmpty(GithubUsername) && _searchResults.Count == 0)
+{
+    <MudPaper Class="pa-4" Elevation="4">
+        <MudText Typo="Typo.h5">Welcome to GitHub Star Search!</MudText>
+        <MudDivider Class="my-2" />
+
+        <MudText Typo="Typo.body1" Class="mt-2">
+            Did you star over 500 repositories and now can’t find that awesome library you bookmarked last week?
+            Are you tired of scrolling endlessly through your GitHub stars, only to lose track of what you’re looking for?
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-2">
+            Don’t worry! <strong>GitHub Star Search</strong> is here to save the day. With blazing-fast full-text search,
+            you’ll find your favorite repositories in no time. No more stress, no more chaos—just your starred repositories,
+            neatly organized and instantly searchable.
+        </MudText>
+
+        <MudDivider Class="my-2" />
+        <MudText Typo="Typo.caption" Class="text-secondary">
+            Go ahead, give it a try and never lose sight of your stars again!
+        </MudText>
+    </MudPaper>
+}
+
+<MudGrid Class="mt-4">
     <!-- GitHub Username Input Section -->
     <MudItem xs="12" md="6">
         <MudPaper Class="pa-4">
