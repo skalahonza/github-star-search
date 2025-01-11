@@ -1,52 +1,11 @@
 ﻿using System.Text;
-using System.Text.Json.Serialization;
 using Meilisearch;
 using Microsoft.Extensions.Options;
 
 namespace GithubStarSearch.Searching;
 
-public class Repository
-{
-    public required string Id { get; init; }
-    public required string Slug { get; init; }
-    public required string Owner { get; init; }
-    public required string Url { get; init; }
-
-    /// <summary>
-    /// Person who added this repository to their starred list.
-    /// </summary>
-    public required string StarredBy { get; init; }
-
-    public required string Description { get; init; }
-    public required DateTimeOffset UpdatedAt { get; set; }
-    
-    public static string ComputeRepositoryId(string starredBy, long id)
-    {
-        // having unique id composed of owner and slug is not enough 
-        // because the same repository can be starred by multiple users
-        // which would result in multiple documents with the same id
-        // we need to be able to filter repositories by the user who starred them
-        // A document identifier can be of type integer or string, only composed of alphanumeric characters (a-z A-Z 0-9), hyphens (-) and underscores (_).
-        return $"{starredBy}-{id}";
-    }
-}
-
 // We need to get _formated part of the response, but the dotnet SDK does not implement it.
 // https://github.com/meilisearch/meilisearch-dotnet/issues/315
-public class FormattedSearchableRepository : Repository
-{
-    [JsonPropertyName("_formatted")]
-    public Repository? Formatted { get; init; }
-}
-
-public class SearchOptions
-{
-    public required string MeilisearchUrl { get; set; }
-    public required string ApiKey { get; set; }
-    public required string RepositoriesIndexName { get; set; } = "repositories";
-    public required string PrimaryKey { get; set; } = "id";
-    public required int CropLength { get; set; } = 32;
-}
 
 public class SearchService(
     IOptions<SearchOptions> searchOptions,
