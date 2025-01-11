@@ -30,31 +30,33 @@
                   HelperText="Searches in your starred repositories"/>
 </MudPaper>
 
-<MudPaper Class="pa-4 mt-4">
-    @foreach (var repository in _searchResults)
-    {
-        <MudCard>
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.h6">@repository.Slug</MudText>
-                </CardHeaderContent>
-            </MudCardHeader>
+@if (_searchResults.Any())
+{
+    <MudPaper Class="pa-4 mt-4">
+        @foreach (var repository in _searchResults)
+        {
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@repository.Slug</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
 
-            <MudCardContent>
-                <MudText Typo="Typo.body1">@repository.Description</MudText>
-                <MudText Typo="Typo.caption">Last Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
-            </MudCardContent>
+                <MudCardContent>
+                    <MudText Typo="Typo.body1">@repository.Description</MudText>
+                    <MudText Typo="Typo.caption">Last Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
+                </MudCardContent>
 
-            <MudCardActions>
-                <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank">
-                    View Repository
-                </MudButton>
-            </MudCardActions>
-        </MudCard>
+                <MudCardActions>
+                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank">
+                        View Repository
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
 
-    }
-</MudPaper>
-
+        }
+    </MudPaper>   
+}
 
 @code {
     public string GithubUsername { get; set; } = "";
