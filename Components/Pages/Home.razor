@@ -8,7 +8,7 @@
 @inject SearchService SearchService
 @inject ILocalStorageService LocalStorage
 @inject IConfiguration Configuration
-
+@inject ISnackbar Snackbar
 
 <PageTitle>Github Star Search</PageTitle>
 
@@ -25,8 +25,17 @@
                               AdornmentIcon="@Icons.Material.Filled.Person"
                               Class="mb-2" 
                               MaxLength="100"/>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitUsername" Class="mt-1">
-                    Re-Index Repositories
+
+                <MudButton Disabled="@IsIndexing" OnClick="SubmitUsername" Variant="Variant.Filled" Color="Color.Primary" Class="mt-1">
+                    @if (IsIndexing)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudText Class="ms-2">Processing</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Re-Index Repositories</MudText>
+                    }
                 </MudButton>
             </MudStack>
         </MudPaper>
@@ -70,7 +79,7 @@
                 </MudCardContent>
 
                 <MudCardActions>
-                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank">
+                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank" Disabled="IsIndexing">
                         View Repository
                     </MudButton>
                 </MudCardActions>
@@ -108,6 +117,7 @@ else
 
 @code {
     public string GithubUsername { get; set; } = "";
+    public bool IsIndexing { get; set; }
     private readonly List<Repository> _searchResults = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -127,47 +137,63 @@ else
             return;
         }
 
-        await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
+        IsIndexing = true;
+        StateHasChanged();
 
-        // index user repos
-        Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
-        Logger.LogInformation("Initializing github client");
-        var token = Configuration["Github:FineGrainedToken"];
-        var github = new GitHubClient(new ProductHeaderValue("GithubStarSearch"));
-        if (string.IsNullOrEmpty(token))
+        try
         {
-            Logger.LogWarning("No fine grained token found, using anonymous client. This might lead to rate limiting");
+            await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
+            
+            // index user repos
+            Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
+            Logger.LogInformation("Initializing github client");
+            var token = Configuration["Github:FineGrainedToken"];
+            var github = new GitHubClient(new ProductHeaderValue("GithubStarSearch"));
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("No fine grained token found, using anonymous client. This might lead to rate limiting");
+            }
+            else
+            {
+                Logger.LogInformation("Using fine grained token for authenticated requests");
+                github.Credentials = new Credentials(token);
+            }
+
+            // Logger.LogInformation("Fetching user {Username} data", GithubUsername);
+            // var user = await github.User.Get(GithubUsername);
+            //
+            // if (user is null)
+            // {
+            //     Logger.LogWarning("User {Username} not found", GithubUsername);
+            //     return;
+            // }
+
+            Logger.LogInformation("Fetching user {Username} starred repositories", GithubUsername);
+            var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
+
+            Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
+            await SearchService.IndexRepositories(starred.Select(x => new Repository
+            {
+                Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
+                Slug = x.Name,
+                Owner = x.Owner.Login,
+                Url = x.HtmlUrl,
+                UpdatedAt = x.UpdatedAt,
+                StarredBy = GithubUsername,
+                Description = x.Description,
+            }));
+            Logger.LogInformation("User {Username} onboarded successfully", GithubUsername);
+            Snackbar.Add("Repositories indexed successfully", Severity.Success);
         }
-        else
+        catch (Exception ex)
         {
-            Logger.LogInformation("Using fine grained token for authenticated requests");
-            github.Credentials = new Credentials(token);
+            Snackbar.Add("Error while indexing starred repositories", Severity.Error);
+            Logger.LogError(ex, "Error while indexing user {Username} starred repositories", GithubUsername);
         }
-
-        // Logger.LogInformation("Fetching user {Username} data", GithubUsername);
-        // var user = await github.User.Get(GithubUsername);
-        //
-        // if (user is null)
-        // {
-        //     Logger.LogWarning("User {Username} not found", GithubUsername);
-        //     return;
-        // }
-
-        Logger.LogInformation("Fetching user {Username} starred repositories", GithubUsername);
-        var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
-
-        Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
-        await SearchService.IndexRepositories(starred.Select(x => new Repository
+        finally
         {
-            Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
-            Slug = x.Name,
-            Owner = x.Owner.Login,
-            Url = x.HtmlUrl,
-            UpdatedAt = x.UpdatedAt,
-            StarredBy = GithubUsername,
-            Description = x.Description,
-        }));
-        Logger.LogInformation("User {Username} onboarded successfully", GithubUsername);
+            IsIndexing = false;
+        }
     }
 
     private async Task Search(string searchQuery)
@@ -180,6 +206,11 @@ else
 
         var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
         _searchResults.AddRange(results);
+        
+        if (_searchResults.Count == 0)
+        {
+            Snackbar.Add("Hmm, no results found, try a different search query", Severity.Warning);
+        }
     }
 
 }
