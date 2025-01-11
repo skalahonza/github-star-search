@@ -23,7 +23,8 @@
                               Variant="Variant.Outlined"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Person"
-                              Class="mb-2" />
+                              Class="mb-2" 
+                              MaxLength="100"/>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitUsername" Class="mt-1">
                     Re-Index Repositories
                 </MudButton>
@@ -43,7 +44,8 @@
                               Variant="Variant.Outlined"
                               Adornment="Adornment.End"
                               AdornmentIcon="@Icons.Material.Filled.Search"
-                              HelperText="Search by typing repository names or keywords" />
+                              HelperText="Search by typing repository names or keywords" 
+                              MaxLength="1000"/>
             </MudStack>
         </MudPaper>
     </MudItem>
@@ -120,7 +122,7 @@ else
 
     private async Task SubmitUsername()
     {
-        if (string.IsNullOrWhiteSpace(GithubUsername))
+        if (string.IsNullOrWhiteSpace(GithubUsername) || GithubUsername.Length > 100)
         {
             return;
         }
@@ -171,7 +173,7 @@ else
     private async Task Search(string searchQuery)
     {
         _searchResults.Clear();
-        if (string.IsNullOrWhiteSpace(searchQuery))
+        if (string.IsNullOrWhiteSpace(searchQuery) || searchQuery.Length > 1000)
         {
             return;
         }
