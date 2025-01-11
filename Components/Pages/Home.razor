@@ -72,22 +72,14 @@
 
     private async Task Search(string searchQuery)
     {
+        _searchResults.Clear();
         if (string.IsNullOrWhiteSpace(searchQuery))
         {
-            _searchResults.Clear();
-        }
-        else
-        {
-            _searchResults.Clear();
-            for (int i = 0; i < 10; i++)
-            {
-                await Task.Delay(100);
-                _searchResults.Add($"Result {i} for {searchQuery}");
-                StateHasChanged();
-            }
+            return;
         }
 
-        // await InvokeAsync(StateHasChanged);
+        var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
+        _searchResults.AddRange(results.Select(x => x.Slug));
     }
 
 }
