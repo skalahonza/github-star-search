@@ -57,6 +57,34 @@
         }
     </MudPaper>   
 }
+else
+{
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h5">How to Use GitHub Star Search</MudText>
+        <MudDivider Class="my-2" />
+
+        <MudText Typo="Typo.body1">
+            1. Enter your GitHub username in the input field and click on <strong>(Re)-Index Full Text Search</strong>. 
+            You only need to perform this step once to set up the search functionality.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-2">
+            2. Start typing in the search bar to find repositories you've starred on GitHub.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-2">
+            3. The results will appear instantly as you type.
+        </MudText>
+
+        <MudDivider Class="my-2" />
+        <MudText Typo="Typo.caption" Class="text-secondary">
+            Note: Ensure your GitHub profile is accessible to the app for the indexing process.
+            We do not browser private repositories.
+            Some users do not have public star data available.
+        </MudText>
+    </MudPaper>
+
+}
 
 @code {
     public string GithubUsername { get; set; } = "";
