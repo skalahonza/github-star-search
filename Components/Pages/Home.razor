@@ -99,7 +99,7 @@
         }
 
         var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
-        _searchResults.AddRange(results.Select(x => x.Slug));
+        _searchResults.AddRange(results.Select(x => x.Slug + " - " + x.StarredBy));
     }
 
 }
