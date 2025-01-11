@@ -7,6 +7,7 @@
 @inject ILogger<Home> Logger
 @inject SearchService SearchService
 @inject ILocalStorageService LocalStorage
+@inject IConfiguration Configuration
 
 
 <PageTitle>Github Star Search</PageTitle>
@@ -15,13 +16,16 @@
     <MudStack>
         <MudTextField @bind-Value="GithubUsername" Label="Github Username"
                       Placeholder="Enter your Github username"/>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SubmitUsername">(Re)-Index full text search</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SubmitUsername">(Re)-Index
+            full text search
+        </MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Secondary" DropShadow="false" Disabled="true">Clear</MudButton>
     </MudStack>
 </MudPaper>
 
 <MudPaper Class="pa-4 mt-4">
-    <MudTextField T="string" DebounceInterval="300" OnDebounceIntervalElapsed="Search" Label="Search" Variant="Variant.Text"
+    <MudTextField T="string" DebounceInterval="300" OnDebounceIntervalElapsed="Search" Label="Search"
+                  Variant="Variant.Text"
                   Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
                   HelperText="Searches in your starred repositories"/>
 </MudPaper>
@@ -56,30 +60,40 @@
         {
             return;
         }
-        
+
         await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
-        
+
         // index user repos
         Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
         Logger.LogInformation("Initializing github client");
+        var token = Configuration["Github:FineGrainedToken"];
         var github = new GitHubClient(new ProductHeaderValue("GithubStarSearch"));
-
-        Logger.LogInformation("Fetching user {Username} data", GithubUsername);
-        var user = await github.User.Get(GithubUsername);
-
-        if (user is null)
+        if (string.IsNullOrEmpty(token))
         {
-            Logger.LogWarning("User {Username} not found", GithubUsername);
-            return;
+            Logger.LogWarning("No fine grained token found, using anonymous client. This might lead to rate limiting");
         }
+        else
+        {
+            Logger.LogInformation("Using fine grained token for authenticated requests");
+            github.Credentials = new Credentials(token);
+        }
+
+        // Logger.LogInformation("Fetching user {Username} data", GithubUsername);
+        // var user = await github.User.Get(GithubUsername);
+        //
+        // if (user is null)
+        // {
+        //     Logger.LogWarning("User {Username} not found", GithubUsername);
+        //     return;
+        // }
 
         Logger.LogInformation("Fetching user {Username} starred repositories", GithubUsername);
         var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
 
         Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
         await SearchService.IndexRepositories(starred.Select(x => new Repository
-        { 
-            Id = x.Id,
+        {
+            Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
             Slug = x.Name,
             Owner = x.Owner.Login,
             Url = x.Url,

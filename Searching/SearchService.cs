@@ -2,13 +2,12 @@
 using System.Text.Json.Serialization;
 using Meilisearch;
 using Microsoft.Extensions.Options;
-using Index = Meilisearch.Index;
 
 namespace GithubStarSearch.Searching;
 
 public class Repository
 {
-    public required long Id { get; init; }
+    public required string Id { get; init; }
     public required string Slug { get; init; }
     public required string Owner { get; init; }
     public required string Url { get; init; }
@@ -20,6 +19,16 @@ public class Repository
 
     public required string Description { get; init; }
     public required DateTimeOffset UpdatedAt { get; set; }
+    
+    public static string ComputeRepositoryId(string starredBy, long id)
+    {
+        // having unique id composed of owner and slug is not enough 
+        // because the same repository can be starred by multiple users
+        // which would result in multiple documents with the same id
+        // we need to be able to filter repositories by the user who starred them
+        // A document identifier can be of type integer or string, only composed of alphanumeric characters (a-z A-Z 0-9), hyphens (-) and underscores (_).
+        return $"{starredBy}-{id}";
+    }
 }
 
 // We need to get _formated part of the response, but the dotnet SDK does not implement it.
@@ -48,8 +57,23 @@ public class SearchService(
     {
         var index = client.Index(searchOptions.Value.RepositoriesIndexName);
         
-        // Fire-and-Forget
         var task = await index.AddDocumentsAsync(repositories);
+        
+        var info = await index.WaitForTaskAsync(task.TaskUid);
+        if (info.Status != TaskInfoStatus.Succeeded)
+        {
+            var builder = new StringBuilder();
+            foreach (var (key, value) in info.Error)
+            {
+                builder.AppendLine($"{key}: {value}");
+            }
+
+            logger.LogError("Failed to index repositories: {Error}", builder.ToString());
+        }
+        else
+        {
+            logger.LogInformation("Indexing succeeded in {Duration}", info.Duration);
+        }
     }
     
     public async Task<IReadOnlyCollection<FormattedSearchableRepository>> SearchRepositories(string starredBy, string term)
@@ -78,7 +102,7 @@ public class SearchService(
         };
 
         var results = await index.SearchAsync<FormattedSearchableRepository>(term, searchQuery);
-        return results.Hits;
+        return results.Hits ?? [];
     }
 
     private async Task SetupIndex()

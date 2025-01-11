@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>GithubStarSearch</RootNamespace>
     <AssemblyName>GithubStarSearch</AssemblyName>
+    <UserSecretsId>b0c8effa-6d4b-4e57-8476-3989524d30a4</UserSecretsId>
   </PropertyGroup>
   
   <ItemGroup>
