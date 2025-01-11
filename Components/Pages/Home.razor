@@ -139,6 +139,19 @@ else
     </MudPaper>
 }
 
+<MudPaper Class="pa-4 mt-4" Elevation="4">
+    <MudText Typo="Typo.caption" Align="Align.Center" Class="mb-2">
+        Built with ❤️ by skalahonza. Find the source code on GitHub:
+    </MudText>
+
+    <MudLink Href="https://github.com/skalahonza/github-star-search" Target="_blank" Class="d-block text-center">
+        <MudText Typo="Typo.body1" Color="Color.Primary" Class="underline">
+            https://github.com/skalahonza/github-star-search
+        </MudText>
+    </MudLink>
+</MudPaper>
+
+
 @code {
     public string GithubUsername { get; set; } = "";
     public bool IsIndexing { get; set; }
