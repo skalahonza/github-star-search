@@ -1,10 +1,13 @@
 ﻿@page "/"
+@using Blazored.LocalStorage
 @using GithubStarSearch.Searching
 @using Octokit
 @using Repository = GithubStarSearch.Searching.Repository
 
 @inject ILogger<Home> Logger
 @inject SearchService SearchService
+@inject ILocalStorageService LocalStorage
+
 
 <PageTitle>Github Star Search</PageTitle>
 
@@ -37,8 +40,25 @@
     public string GithubUsername { get; set; } = "";
     private readonly List<string> _searchResults = new();
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            GithubUsername = await LocalStorage.GetItemAsync<string>("GithubUsername") ?? "";
+            Logger.LogInformation("Github username loaded from local storage: {Username}", GithubUsername);
+            StateHasChanged();
+        }
+    }
+
     private async Task SubmitUsername()
     {
+        if (string.IsNullOrWhiteSpace(GithubUsername))
+        {
+            return;
+        }
+        
+        await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
+        
         // index user repos
         Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
         Logger.LogInformation("Initializing github client");
