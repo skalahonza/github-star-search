@@ -16,20 +16,23 @@
 {
     <MudPaper Class="pa-4" Elevation="4">
         <MudText Typo="Typo.h5">Welcome to GitHub Star Search!</MudText>
-        <MudDivider Class="my-2" />
+        <MudDivider Class="my-2"/>
 
         <MudText Typo="Typo.body1" Class="mt-2">
             Did you star over 500 repositories and now can’t find that awesome library you bookmarked last week?
-            Are you tired of scrolling endlessly through your GitHub stars, only to lose track of what you’re looking for?
+            Are you tired of scrolling endlessly through your GitHub stars, only to lose track of what you’re looking
+            for?
         </MudText>
 
         <MudText Typo="Typo.body1" Class="mt-2">
-            Don’t worry! <strong>GitHub Star Search</strong> is here to save the day. With blazing-fast full-text search,
-            you’ll find your favorite repositories in no time. No more stress, no more chaos—just your starred repositories,
+            Don’t worry! <strong>GitHub Star Search</strong> is here to save the day. With blazing-fast full-text
+            search,
+            you’ll find your favorite repositories in no time. No more stress, no more chaos—just your starred
+            repositories,
             neatly organized and instantly searchable.
         </MudText>
 
-        <MudDivider Class="my-2" />
+        <MudDivider Class="my-2"/>
         <MudText Typo="Typo.caption" Class="text-secondary">
             Go ahead, give it a try and never lose sight of your stars again!
         </MudText>
@@ -47,10 +50,11 @@
                               Variant="Variant.Outlined"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Person"
-                              Class="mb-2" 
+                              Class="mb-2"
                               MaxLength="100"/>
 
-                <MudButton Disabled="@IsIndexing" OnClick="SubmitUsername" Variant="Variant.Filled" Color="Color.Primary" Class="mt-1">
+                <MudButton Disabled="@IsIndexing" OnClick="SubmitUsername" Variant="Variant.Filled"
+                           Color="Color.Primary" Class="mt-1">
                     @if (IsIndexing)
                     {
                         <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
@@ -61,6 +65,9 @@
                         <MudText>Re-Index Repositories</MudText>
                     }
                 </MudButton>
+                <MudText Typo="Typo.caption" Class="text-secondary">
+                    You only have to do this once.
+                </MudText>
             </MudStack>
         </MudPaper>
     </MudItem>
@@ -71,13 +78,14 @@
             <MudStack Spacing="2">
                 <MudText Typo="Typo.h6" Class="mb-1">Search Starred Repositories</MudText>
                 <MudTextField T="string"
+                              Disabled="string.IsNullOrEmpty(GithubUsername)"
                               DebounceInterval="300"
                               OnDebounceIntervalElapsed="Search"
                               Placeholder="Search starred repositories..."
                               Variant="Variant.Outlined"
                               Adornment="Adornment.End"
                               AdornmentIcon="@Icons.Material.Filled.Search"
-                              HelperText="Search by typing repository names or keywords" 
+                              HelperText="Search by typing repository names or keywords"
                               MaxLength="1000"/>
             </MudStack>
         </MudPaper>
@@ -103,7 +111,8 @@
                 </MudCardContent>
 
                 <MudCardActions>
-                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank" Disabled="IsIndexing">
+                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank"
+                               Disabled="IsIndexing">
                         View Repository
                     </MudButton>
                 </MudCardActions>
@@ -180,7 +189,7 @@ else
         try
         {
             await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
-            
+
             // index user repos
             Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
             Logger.LogInformation("Initializing github client");
@@ -243,7 +252,7 @@ else
 
         var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
         _searchResults.AddRange(results);
-        
+
         if (_searchResults.Count == 0)
         {
             Snackbar.Add("Hmm, no results found, try a different search query", Severity.Warning);
