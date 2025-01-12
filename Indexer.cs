@@ -1,4 +1,5 @@
 ﻿using GithubStarSearch.Searching;
+using Markdig;
 using Meilisearch;
 using Octokit;
 using Repository = GithubStarSearch.Searching.Repository;
@@ -85,8 +86,8 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
         try
         {
             var readme = await client.Repository.Content.GetReadme(repository.Owner, repository.Slug);
-            logger.LogDebug("Readme content: {Readme}", readme.Content);
-            return readme.Content;
+            var plainText = Markdown.ToPlainText(readme.Content);
+            return plainText;
         }
         catch (ForbiddenException e)
         {
