@@ -63,6 +63,18 @@ public class SearchService(
         var results = await index.SearchAsync<FormattedSearchableRepository>(term, searchQuery);
         return results.Hits ?? [];
     }
+    
+    public Task<ResourceResults<IEnumerable<Repository>>> GetRepositories()
+    {
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        return index.GetDocumentsAsync<Repository>();
+    }
+    
+    public async Task UpdateRepositories(IEnumerable<Repository> repositories)
+    {
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        await index.UpdateDocumentsAsync(repositories);
+    }
 
     private async Task SetupIndex()
     {

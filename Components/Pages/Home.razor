@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Blazored.LocalStorage
 @using GithubStarSearch.Searching
+@using Markdig
 @using Octokit
 @using Repository = GithubStarSearch.Searching.Repository
 
@@ -106,6 +107,7 @@
 
                 <MudCardContent>
                     <MudText Typo="Typo.body1">@repository.Description</MudText>
+                    <MudText Typo="Typo.body1">@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
                     <MudText Typo="Typo.caption">Last
                         Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
                 </MudCardContent>

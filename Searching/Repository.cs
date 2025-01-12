@@ -14,6 +14,8 @@ public class Repository
 
     public required string Description { get; init; }
     public required DateTimeOffset UpdatedAt { get; set; }
+
+    public string Readme { get; set; } = "";
     
     public static string ComputeRepositoryId(string starredBy, long id)
     {

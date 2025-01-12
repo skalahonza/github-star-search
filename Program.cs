@@ -1,4 +1,5 @@
 using Blazored.LocalStorage;
+using GithubStarSearch;
 using MudBlazor.Services;
 using GithubStarSearch.Components;
 using GithubStarSearch.Searching;
@@ -14,6 +15,7 @@ builder.Services.AddRazorComponents()
 
 builder.AddMeilisearch();
 builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddHostedService<Indexer>();
 
 var app = builder.Build();
 
