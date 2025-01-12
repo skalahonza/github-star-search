@@ -231,6 +231,13 @@ else
             Logger.LogInformation("Fetching user {Username} starred repositories", GithubUsername);
             var starred = await github.Activity.Starring.GetAllForUser(GithubUsername);
 
+            if (starred.Count > 5000)
+            {
+                Logger.LogWarning("User {Username} has starred more than 5000 repositories, only the first 5000 will be indexed", GithubUsername);
+                Snackbar.Add("User has starred more than 5000 repositories, only the first 5000 will be indexed", Severity.Warning);
+                starred = starred.Take(5000).ToList();
+            }
+
             Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
             await SearchService.IndexRepositories(starred.Select(x => new Repository
             {
