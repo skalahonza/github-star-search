@@ -101,7 +101,7 @@
         <MudCard Class="pa-4 mt-4">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText>@repository.Slug by @repository.Owner</MudText>
+                    <MudText Typo="Typo.h5">@((MarkupString)$"{repository.Owner}/{repository.Slug}")</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
 
