@@ -1,5 +1,4 @@
-﻿using System.Text;
-using GithubStarSearch.Searching;
+﻿using GithubStarSearch.Searching;
 using Octokit;
 using Repository = GithubStarSearch.Searching.Repository;
 
@@ -22,14 +21,14 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
                 var service = scope.ServiceProvider.GetRequiredService<SearchService>();
                 var repositories = await service.GetRepositories();
                 var github = CreateClient();
-                
+
                 foreach (var repository in repositories.Results)
                 {
                     var readme = await GetReadme(repository, github);
                     logger.LogInformation("Updating README for {Owner}/{Slug}", repository.Owner, repository.Slug);
                     repository.Readme = readme;
                 }
-                
+
                 await service.UpdateRepositories(repositories.Results);
             }
             catch (Exception e)
@@ -52,6 +51,8 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
 
     private async Task<string> GetReadme(Repository repository, GitHubClient client)
     {
+        // github limit is 5,000 requests per hour per user
+
         // Fetch the README
         logger.LogInformation("Fetching README for {Owner}/{Slug}", repository.Owner, repository.Slug);
         var readme = await client.Repository.Content.GetReadme(repository.Owner, repository.Slug);
