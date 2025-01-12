@@ -239,7 +239,9 @@ else
             }
 
             Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
-            await SearchService.IndexRepositories(starred.Select(x => new Repository
+            await SearchService.IndexRepositories(starred
+                .Where(x => !x.Private) // skip private repositories, the token used should not have access anyway, but just in case
+                .Select(x => new Repository
             {
                 Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
                 Slug = x.Name,
