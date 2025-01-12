@@ -101,48 +101,21 @@
         <MudCard Class="pa-4 mt-4">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText>
-                        <MudHighlighter Text="@repository.Slug"
-                                        HighlightedText="@_searchQuery"
-                                        UntilNextBoundary="true"
-                                        CaseSensitive="false"
-                                        Markup="true"
-                                        Class="pa-1 mud-elevation-2 mud-theme-primary" />
-                    </MudText>
-                    <br/>
-                    <MudText>
-                        by
-                        <MudHighlighter Text="@repository.Owner"
-                                        HighlightedText="@_searchQuery"
-                                        UntilNextBoundary="true"
-                                        CaseSensitive="false"
-                                        Markup="true"
-                                        Class="pa-1 mud-elevation-2 mud-theme-primary"/>
-                    </MudText>
+                    <MudText>@repository.Slug by @repository.Owner</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
 
             <MudCardContent>
-                <MudHighlighter Text="@repository.Description"
-                                HighlightedText="@_searchQuery"
-                                UntilNextBoundary="true"
-                                CaseSensitive="false"
-                                Markup="true"
-                                Class="pa-1 mud-elevation-2 mud-theme-primary"/>
+                <MudText>@((MarkupString)repository.Description)</MudText>
                 <MudDivider Class="my-2"/>
-                <MudHighlighter Text="@(Markdown.ToHtml(repository.Readme))"
-                                HighlightedText="@_searchQuery"
-                                UntilNextBoundary="true"
-                                CaseSensitive="false"
-                                Markup="true"
-                                Class="pa-1 mud-elevation-2 mud-theme-primary"/>
+                <MudText>@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
                 <MudDivider Class="my-2"/>
                 <MudText Typo="Typo.caption">Last
                     Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
             </MudCardContent>
 
             <MudCardActions>
-                <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank"
+                <MudButton Color="Color.Primary" Href="@repository.Url" Target="_blank"
                            Disabled="IsIndexing">
                     View Repository
                 </MudButton>
@@ -152,6 +125,7 @@
 }
 else
 {
+    <!-- No Search Results Placeholder -->
     <MudPaper Class="pa-4 mt-4">
         <MudText Typo="Typo.h5">How to Use GitHub Star Search</MudText>
         <MudDivider Class="my-2"/>
