@@ -8,8 +8,14 @@ namespace GithubStarSearch.Searching;
 // We need to get _formated part of the response, but the dotnet SDK does not implement it.
 // https://github.com/meilisearch/meilisearch-dotnet/issues/315
 
+public record SearchOptions
+{
+    public string HighlightPreTag { get; init; } = "<em>";
+    public string HighlightPostTag { get; init; } = "</em>";
+}
+
 public class SearchService(
-    IOptions<SearchOptions> searchOptions,
+    IOptions<MeilisearchOptions> searchOptions,
     MeilisearchClient client,
     ILogger<SearchService> logger)
 {
@@ -37,7 +43,8 @@ public class SearchService(
     }
 
     public async Task<IReadOnlyCollection<Repository>> SearchRepositories(string starredBy,
-        string term)
+        string term,
+        SearchOptions options)
     {
         await MakeSureIndexExists();
         await SetupIndex();
@@ -62,7 +69,9 @@ public class SearchService(
                 nameof(Repository.Readme).ToCamelCase()
             ],
             AttributesToCrop = [nameof(Repository.Description).ToCamelCase(), nameof(Repository.Readme).ToCamelCase()],
-            CropLength = searchOptions.Value.CropLength
+            CropLength = searchOptions.Value.CropLength,
+            HighlightPreTag = options.HighlightPreTag,
+            HighlightPostTag = options.HighlightPostTag
         };
 
         var results = await index.SearchAsync<FormattedSearchableRepository>(term, searchQuery);

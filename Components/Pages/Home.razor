@@ -291,7 +291,11 @@ else
             return;
         }
 
-        var results = await SearchService.SearchRepositories(GithubUsername, searchQuery);
+        var results = await SearchService.SearchRepositories(GithubUsername, searchQuery, new SearchOptions
+        {
+            HighlightPreTag = """<b class="pa-1 mud-elevation-2 mud-theme-primary">""",
+            HighlightPostTag = "</b>",
+        });
         _searchResults.AddRange(results);
 
         if (_searchResults.Count == 0)

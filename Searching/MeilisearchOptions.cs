@@ -1,6 +1,6 @@
 namespace GithubStarSearch.Searching;
 
-public class SearchOptions
+public class MeilisearchOptions
 {
     public required string MeilisearchUrl { get; set; }
     public required string ApiKey { get; set; }
