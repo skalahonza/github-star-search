@@ -81,10 +81,14 @@ public class SearchService(
             .ToList() ?? [];
     }
 
-    public Task<ResourceResults<IEnumerable<Repository>>> GetRepositories()
+    public Task<ResourceResults<IEnumerable<Repository>>> GetRepositories(int limit, int offset)
     {
         var index = client.Index(searchOptions.Value.RepositoriesIndexName);
-        return index.GetDocumentsAsync<Repository>();
+        return index.GetDocumentsAsync<Repository>(new DocumentsQuery()
+        {
+            Limit = limit,
+            Offset = offset,
+        });
     }
 
     public async Task<bool> IsIndexed(string githubUsername)
@@ -105,6 +109,10 @@ public class SearchService(
         return results.Total > 0;
     }
 
+    /// <summary>
+    /// Updates repositories asynchronously.
+    /// It may take a while for the changes to be reflected in the search results.
+    /// </summary>
     public async Task UpdateRepositories(IEnumerable<Repository> repositories)
     {
         var index = client.Index(searchOptions.Value.RepositoriesIndexName);
