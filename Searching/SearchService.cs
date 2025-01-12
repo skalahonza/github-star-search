@@ -65,7 +65,10 @@ public class SearchService(
         };
 
         var results = await index.SearchAsync<FormattedSearchableRepository>(term, searchQuery);
-        return results.Hits?.Select(x => x.Formatted ?? x).ToList() ?? [];
+        return results.Hits?
+            // todo I dont know how to correctly highlight <em> at the moment
+            .Select(x => x.Formatted ?? x)
+            .ToList() ?? [];
     }
 
     public Task<ResourceResults<IEnumerable<Repository>>> GetRepositories()

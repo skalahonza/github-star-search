@@ -93,6 +93,7 @@
     </MudItem>
 </MudGrid>
 
+<!-- Search Results Section -->
 @if (_searchResults.Any())
 {
     @foreach (var repository in _searchResults)
@@ -100,15 +101,42 @@
         <MudCard Class="pa-4 mt-4">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6">@((MarkupString)repository.Slug)</MudText>
+                    <MudText>
+                        <MudHighlighter Text="@repository.Slug"
+                                        HighlightedText="@_searchQuery"
+                                        UntilNextBoundary="true"
+                                        CaseSensitive="false"
+                                        Markup="true"
+                                        Class="pa-1 mud-elevation-2 mud-theme-primary" />
+                    </MudText>
                     <br/>
-                    <MudText Typo="Typo.subtitle1">by @((MarkupString)repository.Owner)</MudText>
+                    <MudText>
+                        by
+                        <MudHighlighter Text="@repository.Owner"
+                                        HighlightedText="@_searchQuery"
+                                        UntilNextBoundary="true"
+                                        CaseSensitive="false"
+                                        Markup="true"
+                                        Class="pa-1 mud-elevation-2 mud-theme-primary"/>
+                    </MudText>
                 </CardHeaderContent>
             </MudCardHeader>
 
             <MudCardContent>
-                <MudText Typo="Typo.body1">@((MarkupString)repository.Description)</MudText>
-                <MudText Typo="Typo.body1">@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
+                <MudHighlighter Text="@repository.Description"
+                                HighlightedText="@_searchQuery"
+                                UntilNextBoundary="true"
+                                CaseSensitive="false"
+                                Markup="true"
+                                Class="pa-1 mud-elevation-2 mud-theme-primary"/>
+                <MudDivider Class="my-2"/>
+                <MudHighlighter Text="@(Markdown.ToHtml(repository.Readme))"
+                                HighlightedText="@_searchQuery"
+                                UntilNextBoundary="true"
+                                CaseSensitive="false"
+                                Markup="true"
+                                Class="pa-1 mud-elevation-2 mud-theme-primary"/>
+                <MudDivider Class="my-2"/>
                 <MudText Typo="Typo.caption">Last
                     Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
             </MudCardContent>
@@ -167,6 +195,7 @@ else
     public string GithubUsername { get; set; } = "";
     public bool IsIndexing { get; set; }
     private readonly List<Repository> _searchResults = new();
+    private string _searchQuery = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -246,6 +275,7 @@ else
 
     private async Task Search(string searchQuery)
     {
+        _searchQuery = searchQuery;
         _searchResults.Clear();
         if (string.IsNullOrWhiteSpace(searchQuery) || searchQuery.Length > 1000)
         {
