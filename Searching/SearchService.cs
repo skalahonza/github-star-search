@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Meilisearch;
+using Meilisearch.QueryParameters;
 using Microsoft.Extensions.Options;
 
 namespace GithubStarSearch.Searching;
@@ -75,6 +76,24 @@ public class SearchService(
     {
         var index = client.Index(searchOptions.Value.RepositoriesIndexName);
         return index.GetDocumentsAsync<Repository>();
+    }
+
+    public async Task<bool> IsIndexed(string githubUsername)
+    {
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        var searchFilterConditions = new List<string>
+        {
+            $"{nameof(Repository.StarredBy).ToCamelCase()} = {githubUsername}"
+        };
+
+        // Set the query with filter and additional settings
+        var query = new DocumentsQuery
+        {
+            Filter = searchFilterConditions,
+        };
+
+        var results = await index.GetDocumentsAsync<Repository>(query);
+        return results.Total > 0;
     }
 
     public async Task UpdateRepositories(IEnumerable<Repository> repositories)

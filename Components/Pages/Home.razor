@@ -214,6 +214,15 @@ else
             return;
         }
 
+#if RELEASE
+        if (await SearchService.IsIndexed(GithubUsername))
+        {
+        Logger.LogInformation("Repositories already indexed for {Username}", GithubUsername);
+        Snackbar.Add("Repositories already indexed", Severity.Info);
+        return;
+        }
+#endif
+
         IsIndexing = true;
         StateHasChanged();
 
