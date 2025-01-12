@@ -95,32 +95,32 @@
 
 @if (_searchResults.Any())
 {
-    <MudPaper Class="pa-4 mt-4">
-        @foreach (var repository in _searchResults)
-        {
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@repository.Slug</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
+    @foreach (var repository in _searchResults)
+    {
+        <MudCard Class="pa-4 mt-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@((MarkupString)repository.Slug)</MudText>
+                    <br/>
+                    <MudText Typo="Typo.subtitle1">by @((MarkupString)repository.Owner)</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
 
-                <MudCardContent>
-                    <MudText Typo="Typo.body1">@repository.Description</MudText>
-                    <MudText Typo="Typo.body1">@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
-                    <MudText Typo="Typo.caption">Last
-                        Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
-                </MudCardContent>
+            <MudCardContent>
+                <MudText Typo="Typo.body1">@((MarkupString)repository.Description)</MudText>
+                <MudText Typo="Typo.body1">@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
+                <MudText Typo="Typo.caption">Last
+                    Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
+            </MudCardContent>
 
-                <MudCardActions>
-                    <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank"
-                               Disabled="IsIndexing">
-                        View Repository
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        }
-    </MudPaper>
+            <MudCardActions>
+                <MudButton Color="Color.Primary" Href="@repository.Url" Class="ml-auto" Target="_blank"
+                           Disabled="IsIndexing">
+                    View Repository
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
 }
 else
 {
