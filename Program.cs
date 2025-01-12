@@ -1,10 +1,17 @@
 using Blazored.LocalStorage;
 using GithubStarSearch;
-using MudBlazor.Services;
 using GithubStarSearch.Components;
 using GithubStarSearch.Searching;
+using MudBlazor.Services;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add serilog
+builder.Services.AddSerilog(x => x
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"));
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
@@ -19,6 +26,8 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddHostedService<Indexer>();
 
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
