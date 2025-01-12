@@ -13,6 +13,7 @@ builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Application logic services
 builder.AddMeilisearch();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddHostedService<Indexer>();
