@@ -12,11 +12,11 @@ public class Repository
     /// </summary>
     public required string StarredBy { get; init; }
 
-    public required string Description { get; init; }
+    public required string Description { get; set; }
     public required DateTimeOffset UpdatedAt { get; set; }
 
     public string Readme { get; set; } = "";
-    
+
     public static string ComputeRepositoryId(string starredBy, long id)
     {
         // having unique id composed of owner and slug is not enough 

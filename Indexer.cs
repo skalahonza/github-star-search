@@ -7,7 +7,7 @@ using Repository = GithubStarSearch.Searching.Repository;
 namespace GithubStarSearch;
 
 /// <summary>
-/// Background worker that iteratively indexes repositories.
+/// Background worker that periodically updates repositories.
 /// </summary>
 public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) : BackgroundService
 {
@@ -55,15 +55,29 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
 
         foreach (var repository in repositories.Results)
         {
-            var readme = await GetReadme(repository, github);
-            logger.LogInformation("Updating README for {Owner}/{Slug}", repository.Owner, repository.Slug);
-            repository.Readme = readme;
+            await UpdateRepository(repository, github);
         }
 
         logger.LogInformation("Updating repositories");
         await service.UpdateRepositories(repositories.Results);
 
         return repositories;
+    }
+
+    private async Task UpdateRepository(Repository repository, GitHubClient github)
+    {
+        var details = await github.Repository.Get(repository.Owner, repository.Slug);
+        if (details is null)
+        {
+            logger.LogWarning("Repository {Owner}/{Slug} not found", repository.Owner, repository.Slug);
+            return;
+        }
+
+        repository.Description = details.Description;
+        repository.UpdatedAt = details.UpdatedAt;
+        var readme = await GetReadme(repository, github);
+        logger.LogInformation("Updating README for {Owner}/{Slug}", repository.Owner, repository.Slug);
+        repository.Readme = readme;
     }
 
     private GitHubClient CreateClient()
