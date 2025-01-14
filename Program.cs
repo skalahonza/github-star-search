@@ -21,6 +21,8 @@ builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.UseMinimalHttpLogger();
+
 // Application logic services
 builder.Services.AddScoped<GitHubClient>(x =>
 {
