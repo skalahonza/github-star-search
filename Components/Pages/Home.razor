@@ -241,16 +241,7 @@ else
             Logger.LogInformation("Indexing {Count} repositories starred by {Username}", starred.Count, GithubUsername);
             await SearchService.IndexRepositories(starred
                 .Where(x => !x.Private) // skip private repositories, the token used should not have access anyway, but just in case
-                .Select(x => new Repository
-            {
-                Id = Repository.ComputeRepositoryId(GithubUsername, x.Id),
-                Slug = x.Name,
-                Owner = x.Owner.Login,
-                Url = x.HtmlUrl,
-                UpdatedAt = x.UpdatedAt,
-                StarredBy = GithubUsername,
-                Description = x.Description,
-            }));
+                .Select(x => Repository.FromGithubRepository(x, GithubUsername)));
             Logger.LogInformation("User {Username} onboarded successfully", GithubUsername);
             Snackbar.Add("Repositories indexed successfully", Severity.Success);
         }

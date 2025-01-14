@@ -9,7 +9,7 @@ namespace GithubStarSearch;
 /// <summary>
 /// Background worker that periodically updates repositories.
 /// </summary>
-public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) : BackgroundService
+public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvider serviceProvider) : BackgroundService
 {
     private const int RequestLimit = 200;
     private readonly PeriodicTimer _timer = new(TimeSpan.FromMinutes(5));
@@ -66,7 +66,7 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
 
     private async Task UpdateRepository(Repository repository, GitHubClient github)
     {
-        var details = await github.Repository.Get(repository.Owner, repository.Slug);
+        var details = await GetDetails(repository, github);
         if (details is null)
         {
             logger.LogWarning("Repository {Owner}/{Slug} not found", repository.Owner, repository.Slug);
@@ -78,6 +78,25 @@ public class Indexer(ILogger<Indexer> logger, IServiceProvider serviceProvider) 
         var readme = await GetReadme(repository, github);
         logger.LogInformation("Updating README for {Owner}/{Slug}", repository.Owner, repository.Slug);
         repository.Readme = readme;
+    }
+
+    private async Task<Octokit.Repository?> GetDetails(Repository repository, GitHubClient github)
+    {
+        try
+        {
+            return await github.Repository.Get(repository.Owner, repository.Slug);
+        }
+        catch (ForbiddenException e)
+        {
+            logger.LogWarning(e, "Forbidden while fetching details for {Owner}/{Slug}", repository.Owner,
+                repository.Slug);
+            return null;
+        }
+        catch (NotFoundException e)
+        {
+            logger.LogWarning(e, "Repository {Owner}/{Slug} not found", repository.Owner, repository.Slug);
+            return null;
+        }
     }
 
     private GitHubClient CreateClient()

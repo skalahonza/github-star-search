@@ -3,6 +3,7 @@ using GithubStarSearch;
 using GithubStarSearch.Components;
 using GithubStarSearch.Searching;
 using MudBlazor.Services;
+using Octokit;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,9 +22,28 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Application logic services
+builder.Services.AddScoped<GitHubClient>(x =>
+{
+    var configuration = x.GetRequiredService<IConfiguration>();
+    var logger = x.GetRequiredService<ILogger<Program>>();
+    var token = configuration["Github:FineGrainedToken"];
+
+    var client = new GitHubClient(new ProductHeaderValue("GithubStarSearch"));
+    if (string.IsNullOrEmpty(token))
+    {
+        logger.LogCritical("No Github:FineGrainedToken found in configuration");
+    }
+    else
+    {
+        client.Credentials = new Credentials(token);
+    }
+
+    return client;
+});
 builder.AddMeilisearch();
 builder.Services.AddBlazoredLocalStorage();
-builder.Services.AddHostedService<Indexer>();
+builder.Services.AddHostedService<RepositoryUpdater>();
+builder.Services.AddHostedService<StarsUpdater>();
 
 var app = builder.Build();
 

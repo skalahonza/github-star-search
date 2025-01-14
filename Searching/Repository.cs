@@ -17,7 +17,18 @@ public class Repository
 
     public string Readme { get; set; } = "";
 
-    public static string ComputeRepositoryId(string starredBy, long id)
+    public static Repository FromGithubRepository(Octokit.Repository repository, string starredBy) => new()
+    {
+        Id = ComputeRepositoryId(starredBy, repository.Id),
+        Slug = repository.Name,
+        Owner = repository.Owner.Login,
+        Url = repository.HtmlUrl,
+        UpdatedAt = repository.UpdatedAt,
+        StarredBy = starredBy,
+        Description = repository.Description,
+    };
+
+    private static string ComputeRepositoryId(string starredBy, long id)
     {
         // having unique id composed of owner and slug is not enough 
         // because the same repository can be starred by multiple users
@@ -26,4 +37,8 @@ public class Repository
         // A document identifier can be of type integer or string, only composed of alphanumeric characters (a-z A-Z 0-9), hyphens (-) and underscores (_).
         return $"{starredBy}-{id}";
     }
+
+    public override int GetHashCode() => Id.GetHashCode();
+
+    public override bool Equals(object? obj) => obj is Repository other && other.Id == Id;
 }

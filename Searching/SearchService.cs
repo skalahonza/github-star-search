@@ -42,6 +42,28 @@ public class SearchService(
         }
     }
 
+    public async Task RemoveRepositories(IEnumerable<Repository> repositories)
+    {
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        var task = await index.DeleteDocumentsAsync(repositories.Select(x => x.Id));
+
+        var info = await index.WaitForTaskAsync(task.TaskUid);
+        if (info.Status != TaskInfoStatus.Succeeded)
+        {
+            var builder = new StringBuilder();
+            foreach (var (key, value) in info.Error)
+            {
+                builder.AppendLine($"{key}: {value}");
+            }
+
+            logger.LogError("Failed to remove repositories: {Error}", builder.ToString());
+        }
+        else
+        {
+            logger.LogInformation("Removing succeeded in {Duration}", info.Duration);
+        }
+    }
+
     public async Task<IReadOnlyCollection<Repository>> SearchRepositories(string starredBy,
         string term,
         SearchOptions options)
@@ -89,6 +111,23 @@ public class SearchService(
             Limit = limit,
             Offset = offset,
         });
+    }
+
+    public async IAsyncEnumerable<Repository> GetAllRepositories()
+    {
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        var offset = 0;
+        ResourceResults<IEnumerable<Repository>>? result;
+        do
+        {
+            result = await index.GetDocumentsAsync<Repository>(new DocumentsQuery { Offset = offset });
+            foreach (var repository in result.Results)
+            {
+                yield return repository;
+            }
+
+            offset += result.Results.Count();
+        } while (result.Results.Any());
     }
 
     public async Task<bool> IsIndexed(string githubUsername)
