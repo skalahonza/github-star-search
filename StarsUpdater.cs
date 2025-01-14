@@ -33,12 +33,25 @@ public class StarsUpdater(ILogger<StarsUpdater> logger, IServiceProvider service
 
                 foreach (var (user, currentStars) in allRepositories)
                 {
+                    logger.LogInformation("Fetching starred repositories for user {User}", user);
                     var starred = await github.Activity.Starring.GetAllForUser(user) ?? [];
                     var githubStars = starred.Select(x => Repository.FromGithubRepository(x, user)).ToHashSet();
-                    var unstarred = currentStars.Except(githubStars).ToList();
+                    logger.LogInformation("Fetched {Count} starred repositories for user {User}", starred.Count, user);
+
                     var newlyStarred = githubStars.Except(currentStars).ToList();
-                    await service.IndexRepositories(newlyStarred);
-                    await service.RemoveRepositories(unstarred);
+                    logger.LogInformation("{Count} newly starred repositories for user {User}", newlyStarred.Count,
+                        user);
+                    if (newlyStarred.Any())
+                    {
+                        await service.IndexRepositories(newlyStarred);
+                    }
+
+                    var unStarred = currentStars.Except(githubStars).ToList();
+                    logger.LogInformation("{Count} un-starred repositories for user {User}", unStarred.Count, user);
+                    if (unStarred.Any())
+                    {
+                        await service.RemoveRepositories(unStarred);
+                    }
                 }
 
                 logger.LogInformation("Waiting {Period} for next tick", _timer.Period);
