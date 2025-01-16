@@ -17,22 +17,8 @@ No more stress, no more chaos—just your starred repositories, neatly organized
 
 ---
 
-### How to Use
-1. **Enter your GitHub username** in the input field and click `(Re)-Index Full Text Search`.  
-   *(This only needs to be done once to set up the search.)*
-2. Start typing in the search bar to find your repositories.
-3. Enjoy instant, hassle-free results!
-
----
-
 ### Live Demo
 The app is hosted at: [gss.janskala.cz](https://gss.janskala.cz)
-
----
-
-### Source Code
-The source code for GitHub Star Search is available on GitHub:  
-[GitHub Star Search Repository](https://github.com/skalahonza/github-star-search)
 
 ---
 
