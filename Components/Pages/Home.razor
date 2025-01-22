@@ -10,6 +10,7 @@
 @inject ILocalStorageService LocalStorage
 @inject IConfiguration Configuration
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
 <PageTitle>Github Star Search</PageTitle>
 
@@ -68,6 +69,8 @@
                 </MudButton>
                 <MudText Typo="Typo.caption" Class="text-secondary">
                     You only have to do this once.
+                    Username is saved as query parameter in the URL.
+                    So you can bookmark the page and come back later or share with others.
                 </MudText>
             </MudStack>
         </MudPaper>
@@ -146,7 +149,7 @@ else
         <MudDivider Class="my-2"/>
         <MudText Typo="Typo.caption" Class="text-secondary">
             Note: Ensure your GitHub profile is accessible to the app for the indexing process.
-            We do not browser private repositories.
+            We do not browse private repositories.
             Some users do not have public star data available.
         </MudText>
     </MudPaper>
@@ -166,6 +169,8 @@ else
 
 
 @code {
+
+    [SupplyParameterFromQuery(Name = "username")]
     public string GithubUsername { get; set; } = "";
     public bool IsIndexing { get; set; }
     private readonly List<Repository> _searchResults = new();
@@ -175,8 +180,7 @@ else
     {
         if (firstRender)
         {
-            GithubUsername = await LocalStorage.GetItemAsync<string>("GithubUsername") ?? "";
-            Logger.LogInformation("Github username loaded from local storage: {Username}", GithubUsername);
+            await LoadState();
             StateHasChanged();
         }
     }
@@ -187,6 +191,8 @@ else
         {
             return;
         }
+
+        await SaveState();
 
 #if RELEASE
         if (await SearchService.IsIndexed(GithubUsername))
@@ -202,8 +208,6 @@ else
 
         try
         {
-            await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
-
             // index user repos
             Logger.LogInformation("Indexing user repos for {Username}", GithubUsername);
             Logger.LogInformation("Initializing github client");
@@ -278,4 +282,18 @@ else
         }
     }
 
+    private async Task SaveState()
+    {
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("username", GithubUsername));
+        await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
+    }
+
+    private async Task LoadState()
+    {
+        if (string.IsNullOrEmpty(GithubUsername))
+        {
+            GithubUsername = await LocalStorage.GetItemAsync<string>("GithubUsername") ?? "";
+            Logger.LogInformation("Github username loaded from local storage: {Username}", GithubUsername);
+        }
+    }
 }
