@@ -2,6 +2,7 @@ using Blazored.LocalStorage;
 using GithubStarSearch;
 using GithubStarSearch.Components;
 using GithubStarSearch.Searching;
+using MudBlazor;
 using MudBlazor.Services;
 using Octokit;
 using Serilog;
@@ -15,7 +16,10 @@ builder.Services.AddSerilog(x => x
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"));
 
 // Add MudBlazor services
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopLeft;
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
