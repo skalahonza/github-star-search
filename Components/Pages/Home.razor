@@ -13,170 +13,172 @@
 @inject NavigationManager Navigation
 
 <PageTitle>Github Star Search</PageTitle>
+<MudContainer>
+    <MudGrid>
+        <!-- GitHub Username Input Section -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" Class="mb-1">Enter your GitHub Username</MudText>
+                    <MudTextField @bind-Value="GithubUsername"
+                                  Placeholder="Enter your GitHub username..."
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Person"
+                                  Class="mb-2"
+                                  MaxLength="100"/>
 
-<MudGrid>
-    <!-- GitHub Username Input Section -->
-    <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4">
-            <MudStack Spacing="2">
-                <MudText Typo="Typo.h6" Class="mb-1">Enter your GitHub Username</MudText>
-                <MudTextField @bind-Value="GithubUsername"
-                              Placeholder="Enter your GitHub username..."
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Person"
-                              Class="mb-2"
-                              MaxLength="100"/>
+                    <MudButton Disabled="@IsIndexing" OnClick="SubmitUsername" Variant="Variant.Filled"
+                               Color="Color.Primary" Class="mt-1">
+                        @if (IsIndexing)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudText Class="ms-2">🚀 Probing...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Send Probe to Index Stars</MudText>
+                        }
+                    </MudButton>
+                    <MudText Typo="Typo.caption" Class="text-secondary">
+                        You only have to do this once.
+                        Username is saved as query parameter in the URL.
+                        So you can bookmark the page and come back later or share with others.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
-                <MudButton Disabled="@IsIndexing" OnClick="SubmitUsername" Variant="Variant.Filled"
-                           Color="Color.Primary" Class="mt-1">
-                    @if (IsIndexing)
-                    {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                        <MudText Class="ms-2">🚀 Probing...</MudText>
-                    }
-                    else
-                    {
-                        <MudText>Send Probe to Index Stars</MudText>
-                    }
-                </MudButton>
-                <MudText Typo="Typo.caption" Class="text-secondary">
-                    You only have to do this once.
-                    Username is saved as query parameter in the URL.
-                    So you can bookmark the page and come back later or share with others.
-                </MudText>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
+        <!-- Search Bar Section -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" Class="mb-1">Search Starred Repositories</MudText>
+                    <MudTextField T="string"
+                                  Disabled="string.IsNullOrEmpty(GithubUsername)"
+                                  DebounceInterval="300"
+                                  OnDebounceIntervalElapsed="Search"
+                                  Placeholder="Search starred repositories..."
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  MaxLength="100"/>
+                    <MudText Typo="Typo.caption">
+                        Search by typing repository names or keywords.
+                        Results will appear instantly as you type.
+                        Use the minus (-) operator in front of a word or phrase to exclude it from search results.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-    <!-- Search Bar Section -->
-    <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4">
-            <MudStack Spacing="2">
-                <MudText Typo="Typo.h6" Class="mb-1">Search Starred Repositories</MudText>
-                <MudTextField T="string"
-                              Disabled="string.IsNullOrEmpty(GithubUsername)"
-                              DebounceInterval="300"
-                              OnDebounceIntervalElapsed="Search"
-                              Placeholder="Search starred repositories..."
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              MaxLength="100"/>
-                <MudText Typo="Typo.caption">
-                    Search by typing repository names or keywords.
-                    Results will appear instantly as you type.
-                    Use the minus (-) operator in front of a word or phrase to exclude it from search results.
-                </MudText>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-<!-- Search Results Section -->
-@if (_searchResults.Any())
-{
-    @foreach (var repository in _searchResults)
+    <!-- Search Results Section -->
+    @if (_searchResults.Any())
     {
-        <MudCard Class="pa-4 mt-4">
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.h5">@((MarkupString)$"{repository.Owner}/{repository.Slug}")</MudText>
-                </CardHeaderContent>
-            </MudCardHeader>
+        @foreach (var repository in _searchResults)
+        {
+            <MudCard Class="pa-4 mt-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5">@((MarkupString)$"{repository.Owner}/{repository.Slug}")</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
 
-            <MudCardContent>
-                <MudText>@((MarkupString)repository.Description)</MudText>
-                <MudDivider Class="my-2"/>
-                <MudText>@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
-                <MudDivider Class="my-2"/>
-                <MudText Typo="Typo.caption">Last
-                    Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
-            </MudCardContent>
+                <MudCardContent>
+                    <MudText>@((MarkupString)repository.Description)</MudText>
+                    <MudDivider Class="my-2"/>
+                    <MudText>@((MarkupString)Markdown.ToHtml(repository.Readme))</MudText>
+                    <MudDivider Class="my-2"/>
+                    <MudText Typo="Typo.caption">Last
+                        Updated: @repository.UpdatedAt.ToLocalTime().ToString("g")</MudText>
+                </MudCardContent>
 
-            <MudCardActions>
-                <MudButton Color="Color.Primary" Href="@repository.Url" Target="_blank"
-                           Disabled="IsIndexing">
-                    View Repository
-                </MudButton>
-            </MudCardActions>
-        </MudCard>
+                <MudCardActions>
+                    <MudButton Color="Color.Primary" Href="@repository.Url" Target="_blank"
+                               Disabled="IsIndexing">
+                        View Repository
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        }
     }
-}
-else
-{
-    @if (string.IsNullOrEmpty(GithubUsername) && _searchResults.Count == 0)
+    else
     {
-        <MudPaper Class="pa-4 mt-4" Elevation="4">
-            <MudText Typo="Typo.h5">Welcome to GitHub Star Search!</MudText>
+        @if (string.IsNullOrEmpty(GithubUsername) && _searchResults.Count == 0)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="4">
+                <MudText Typo="Typo.h5">Welcome to GitHub Star Search!</MudText>
+                <MudDivider Class="my-2"/>
+
+                <MudText Typo="Typo.body1" Class="mt-2">
+                    Did you star over 500 repositories and now can’t find that awesome library you bookmarked last week?
+                    Are you tired of scrolling endlessly through your GitHub stars, only to lose track of what you’re
+                    looking
+                    for?
+                </MudText>
+
+                <MudText Typo="Typo.body1" Class="mt-2">
+                    Don’t worry! <strong>GitHub Star Search</strong> is here to save the day. With blazing-fast
+                    full-text
+                    search,
+                    you’ll find your favorite repositories in no time. No more stress, no more chaos—just your starred
+                    repositories,
+                    neatly organized and instantly searchable.
+                </MudText>
+
+                <MudDivider Class="my-2"/>
+                <MudText Typo="Typo.caption" Class="text-secondary">
+                    Go ahead, give it a try and never lose sight of your stars again!
+                </MudText>
+            </MudPaper>
+        }
+
+        <!-- No Search Results Placeholder -->
+        <MudPaper Class="pa-4 mt-4">
+            <MudText Typo="Typo.h5">How to Use GitHub Star Search</MudText>
             <MudDivider Class="my-2"/>
 
-            <MudText Typo="Typo.body1" Class="mt-2">
-                Did you star over 500 repositories and now can’t find that awesome library you bookmarked last week?
-                Are you tired of scrolling endlessly through your GitHub stars, only to lose track of what you’re
-                looking
-                for?
+            <MudText Typo="Typo.body1">
+                1. Enter your GitHub username in the input field and click on <strong>Send Probe to Index Stars</strong>.
+                You only need to perform this step once to set up the search functionality.
             </MudText>
 
             <MudText Typo="Typo.body1" Class="mt-2">
-                Don’t worry! <strong>GitHub Star Search</strong> is here to save the day. With blazing-fast full-text
-                search,
-                you’ll find your favorite repositories in no time. No more stress, no more chaos—just your starred
-                repositories,
-                neatly organized and instantly searchable.
+                2. Start typing in the search bar to find repositories you've starred on GitHub.
+            </MudText>
+
+            <MudText Typo="Typo.body1" Class="mt-2">
+                3. The results will appear instantly as you type.
             </MudText>
 
             <MudDivider Class="my-2"/>
             <MudText Typo="Typo.caption" Class="text-secondary">
-                Go ahead, give it a try and never lose sight of your stars again!
+                Note: Ensure your GitHub profile is accessible to the app for the indexing process.
+                We do not browse private repositories.
+                Some users do not have public star data available.
             </MudText>
         </MudPaper>
     }
 
-    <!-- No Search Results Placeholder -->
-    <MudPaper Class="pa-4 mt-4">
-        <MudText Typo="Typo.h5">How to Use GitHub Star Search</MudText>
-        <MudDivider Class="my-2"/>
-
-        <MudText Typo="Typo.body1">
-            1. Enter your GitHub username in the input field and click on <strong>Send Probe to Index Stars</strong>.
-            You only need to perform this step once to set up the search functionality.
+    <MudPaper Class="pa-4 mt-4" Elevation="4">
+        <MudText Typo="Typo.caption" Align="Align.Center" Class="mb-2">
+            Built with ❤️ by skalahonza. Find the source code on GitHub:
         </MudText>
 
-        <MudText Typo="Typo.body1" Class="mt-2">
-            2. Start typing in the search bar to find repositories you've starred on GitHub.
-        </MudText>
-
-        <MudText Typo="Typo.body1" Class="mt-2">
-            3. The results will appear instantly as you type.
-        </MudText>
-
-        <MudDivider Class="my-2"/>
-        <MudText Typo="Typo.caption" Class="text-secondary">
-            Note: Ensure your GitHub profile is accessible to the app for the indexing process.
-            We do not browse private repositories.
-            Some users do not have public star data available.
-        </MudText>
+        <MudLink Href="https://github.com/skalahonza/github-star-search" Target="_blank" Class="d-block text-center">
+            <MudText Typo="Typo.body1" Color="Color.Primary" Class="underline">
+                https://github.com/skalahonza/github-star-search
+            </MudText>
+        </MudLink>
     </MudPaper>
-}
-
-<MudPaper Class="pa-4 mt-4" Elevation="4">
-    <MudText Typo="Typo.caption" Align="Align.Center" Class="mb-2">
-        Built with ❤️ by skalahonza. Find the source code on GitHub:
-    </MudText>
-
-    <MudLink Href="https://github.com/skalahonza/github-star-search" Target="_blank" Class="d-block text-center">
-        <MudText Typo="Typo.body1" Color="Color.Primary" Class="underline">
-            https://github.com/skalahonza/github-star-search
-        </MudText>
-    </MudLink>
-</MudPaper>
-
+</MudContainer>
 
 @code {
 
     [SupplyParameterFromQuery(Name = "username")]
     public string GithubUsername { get; set; } = "";
+
     public bool IsIndexing { get; set; }
     private readonly List<Repository> _searchResults = new();
     private string _searchQuery = "";
@@ -301,4 +303,5 @@ else
             Logger.LogInformation("Github username loaded from local storage: {Username}", GithubUsername);
         }
     }
+
 }
