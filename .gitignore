@@ -403,3 +403,7 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
+/.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.agent.xml
+/.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.ask.xml
+/.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.ask2agent.xml
+/.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.edit.xml
