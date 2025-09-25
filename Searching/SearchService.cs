@@ -103,10 +103,13 @@ public class SearchService(
             .ToList() ?? [];
     }
 
-    public Task<ResourceResults<IEnumerable<Repository>>> GetRepositories(int limit, int offset)
+    public async Task<ResourceResults<IEnumerable<Repository>>> GetRepositories(int limit, int offset)
     {
+        await MakeSureIndexExists();
+        await SetupIndex();
+
         var index = client.Index(searchOptions.Value.RepositoriesIndexName);
-        return index.GetDocumentsAsync<Repository>(new DocumentsQuery()
+        return await index.GetDocumentsAsync<Repository>(new DocumentsQuery()
         {
             Limit = limit,
             Offset = offset,

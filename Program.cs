@@ -46,6 +46,8 @@ builder.Services.AddScoped<GitHubClient>(x =>
 
     return client;
 });
+
+builder.Services.AddMemoryCache(x => { });
 builder.AddMeilisearch();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddHostedService<RepositoryUpdater>();

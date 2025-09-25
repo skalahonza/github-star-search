@@ -1,6 +1,7 @@
 ﻿using GithubStarSearch.Searching;
 using Markdig;
 using Meilisearch;
+using Microsoft.Extensions.Caching.Memory;
 using Octokit;
 using Repository = GithubStarSearch.Searching.Repository;
 
@@ -9,10 +10,12 @@ namespace GithubStarSearch;
 /// <summary>
 /// Background worker that periodically updates repositories.
 /// </summary>
-public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvider serviceProvider) : BackgroundService
+public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvider serviceProvider, IMemoryCache cache)
+    : BackgroundService
 {
     private const int RequestLimit = 200;
     private readonly PeriodicTimer _timer = new(TimeSpan.FromMinutes(5));
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -84,7 +87,16 @@ public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvid
     {
         try
         {
-            return await github.Repository.Get(repository.Owner, repository.Slug);
+            if (cache.TryGetValue($"repo-{repository.Owner}-{repository.Slug}", out Octokit.Repository? details))
+            {
+                logger.LogInformation("Cache hit for {Owner}/{Slug}", repository.Owner, repository.Slug);
+                return details;
+            }
+
+            logger.LogInformation("Fetching details for {Owner}/{Slug}", repository.Owner, repository.Slug);
+            details = await github.Repository.Get(repository.Owner, repository.Slug);
+            cache.Set($"repo-{repository.Owner}-{repository.Slug}", details, _cacheDuration);
+            return details;
         }
         catch (ForbiddenException e)
         {
@@ -118,8 +130,16 @@ public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvid
         logger.LogInformation("Fetching README for {Owner}/{Slug}", repository.Owner, repository.Slug);
         try
         {
-            var readme = await client.Repository.Content.GetReadme(repository.Owner, repository.Slug);
-            var plainText = Markdown.ToPlainText(readme.Content);
+            if (cache.TryGetValue($"readme-{repository.Owner}-{repository.Slug}", out string? readme))
+            {
+                logger.LogInformation("Cache hit for README of {Owner}/{Slug}", repository.Owner, repository.Slug);
+                return readme ?? "";
+            }
+
+            logger.LogInformation("Cache miss for README of {Owner}/{Slug}", repository.Owner, repository.Slug);
+            var readmeMd = await client.Repository.Content.GetReadme(repository.Owner, repository.Slug);
+            var plainText = Markdown.ToPlainText(readmeMd.Content);
+            cache.Set($"readme-{repository.Owner}-{repository.Slug}", plainText, _cacheDuration);
             return plainText;
         }
         catch (ForbiddenException e)
