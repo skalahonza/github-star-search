@@ -18,7 +18,7 @@ builder.Services.AddSerilog(x => x
 // Add MudBlazor services
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopLeft;
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
 });
 
 // Add services to the container.
