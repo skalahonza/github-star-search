@@ -1,4 +1,5 @@
 ﻿@page "/"
+@page "/{username}"
 @using Blazored.LocalStorage
 @using GithubStarSearch.Searching
 @using Markdig
@@ -61,7 +62,7 @@
                 }
             </button>
             <p class="caption">
-                You only have to do this once. Username is saved as a query parameter so you can bookmark the page and share it with others.
+                You only have to do this once. Username is saved as part of the URL path so you can bookmark the page and share it with others.
             </p>
         </div>
 
@@ -202,7 +203,9 @@
 
 @code {
 
-    [SupplyParameterFromQuery(Name = "username")]
+    [Parameter]
+    public string? Username { get; set; }
+
     public string GithubUsername { get; set; } = "";
 
     private bool _isIndexing;
@@ -216,6 +219,14 @@
     private CancellationTokenSource? _debounceCts;
     private ElementReference _btnRef;
     private ElementReference _searchRef;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(Username))
+        {
+            GithubUsername = Username;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -370,7 +381,7 @@
 
     private async Task SaveState()
     {
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("username", GithubUsername));
+        Navigation.NavigateTo($"/{Uri.EscapeDataString(GithubUsername)}");
         await LocalStorage.SetItemAsync("GithubUsername", GithubUsername);
     }
 
