@@ -51,17 +51,17 @@ html, body {
   gap: 16px;
 }
 .appbar-logo {
-  width: 38px; height: 38px; border-radius: 12px;
-  background: linear-gradient(135deg, #7e6fff, #4a86ff);
+  width: 38px; height: 38px;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 20px rgba(126,111,255,0.6), 0 0 40px rgba(126,111,255,0.2);
   flex-shrink: 0;
   animation: logoPulse 4s ease-in-out infinite;
-  color: #fff;
+}
+.appbar-logo img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
 }
 @keyframes logoPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(126,111,255,0.6), 0 0 40px rgba(126,111,255,0.2); }
-  50%       { box-shadow: 0 0 30px rgba(126,111,255,0.9), 0 0 60px rgba(126,111,255,0.35); }
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(126,111,255,0.6)); }
+  50%       { filter: drop-shadow(0 0 14px rgba(126,111,255,0.9)); }
 }
 .appbar-title {
   font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
