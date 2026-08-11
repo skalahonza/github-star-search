@@ -68,6 +68,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+// Explicit UseRouting must come after UseStaticFiles, otherwise routing is auto-inserted
+// at the top of the pipeline and the "/{username}" page route swallows root-level static
+// files such as /favicon.ico and /site.webmanifest.
+app.UseRouting();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
