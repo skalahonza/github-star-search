@@ -351,6 +351,25 @@ html, body {
 .footer a { color: #7e6fff; text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
 
+/* ── Star on GitHub ── */
+.gh-star {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; padding: 7px 14px; border-radius: 20px;
+  border: 1px solid rgba(126,111,255,0.18);
+  background: rgba(22,22,42,0.5);
+  color: #6e6c85 !important;
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.78rem; letter-spacing: 0.03em;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.gh-star:hover {
+  color: #c8c6d8 !important; text-decoration: none !important;
+  border-color: rgba(126,111,255,0.45);
+  background: rgba(126,111,255,0.1);
+}
+.gh-star .gh-star-icon { transition: color 0.2s, transform 0.25s; }
+.gh-star:hover .gh-star-icon { color: #ffb545; transform: rotate(72deg) scale(1.1); }
+
 /* ── Results header ── */
 .results-header {
   display: flex; align-items: center; gap: 12px;
