@@ -114,7 +114,116 @@
         </div>
     </div>
 
-    @if (_searchResults.Count > 0)
+    @if (IsIndexed)
+    {
+        <div class="cleanup-bar fade-up fade-up-2">
+            <div class="cleanup-copy">
+                <span class="cleanup-icon">🧹</span>
+                <div>
+                    <div class="cleanup-title">Cleanup suggestions</div>
+                    <div class="cleanup-sub">Find stars that were archived by their owner or went dark years ago.</div>
+                </div>
+            </div>
+            <div class="cleanup-actions">
+                <select class="cleanup-select"
+                        disabled="@_isLoadingObsolete"
+                        @bind="StaleYears"
+                        @bind:after="OnStaleThresholdChanged">
+                    <option value="1">Silent for 1+ year</option>
+                    <option value="2">Silent for 2+ years</option>
+                    <option value="3">Silent for 3+ years</option>
+                    <option value="5">Silent for 5+ years</option>
+                </select>
+                <button class="cleanup-btn"
+                        type="button"
+                        disabled="@_isLoadingObsolete"
+                        @onclick="ToggleObsolete">
+                    @if (_isLoadingObsolete)
+                    {
+                        <span class="spinner"></span>
+                        <span>Scanning orbit…</span>
+                    }
+                    else if (_showObsolete)
+                    {
+                        <span>Hide suggestions</span>
+                    }
+                    else
+                    {
+                        <span>Suggest cleanup 🧹</span>
+                    }
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (_showObsolete)
+    {
+        <div class="results-header fade-up">
+            <span class="results-count">@_obsoleteResults.Count obsolete star@(_obsoleteResults.Count != 1 ? "s" : "")</span>
+            <span class="results-label">archived, or no commits since <strong>@_staleBefore.ToLocalTime().ToString("MM/yyyy")</strong></span>
+        </div>
+
+        @if (_obsoleteResults.Count == 0)
+        {
+            <div class="repo-card">
+                <div class="repo-streak"></div>
+                <div class="repo-title">All clear ✨</div>
+                <p class="repo-desc">None of your indexed stars are archived or that quiet. Try a shorter silence window.</p>
+            </div>
+        }
+
+        @for (var i = 0; i < _obsoleteResults.Count; i++)
+        {
+            var repo = _obsoleteResults[i];
+            var delay = $"{i * 0.05:0.00}s";
+            <div class="repo-card obsolete-card" style="animation-delay: @delay;">
+                <div class="repo-streak"></div>
+                <div class="repo-header">
+                    <div class="repo-title">
+                        <span class="repo-owner">@repo.Owner/</span><span class="repo-slug">@repo.Slug</span>
+                    </div>
+                    <a class="view-repo-btn view-repo-btn-icon" href="@repo.Url" target="_blank" rel="noreferrer" title="View on GitHub">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                        </svg>
+                    </a>
+                </div>
+                <div class="badges">
+                    @if (repo.Archived)
+                    {
+                        <span class="badge badge-archived">📦 Archived by owner</span>
+                    }
+                    @if (repo.IsStale(_staleBefore))
+                    {
+                        <span class="badge badge-stale">💤 @StaleFor(repo)</span>
+                    }
+                </div>
+                <p class="repo-desc">@repo.Description</p>
+                <div class="repo-footer">
+                    <span class="repo-updated">
+                        @(repo.PushedAt is { } pushedAt
+                            ? $"Last commit {pushedAt.ToLocalTime():MM/dd/yyyy}"
+                            : "Last commit unknown")
+                    </span>
+                    <a class="view-repo-btn" href="@repo.Url" target="_blank" rel="noreferrer">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                        </svg>
+                        <span>Open &amp; unstar</span>
+                    </a>
+                </div>
+            </div>
+        }
+
+        <p class="caption">
+            @if (_obsoleteResults.Count == ObsoleteLimit)
+            {
+                <span>Showing the @ObsoleteLimit deadest repositories first. </span>
+            }
+            Unstarring happens on GitHub — we never touch your account. Repositories indexed just now are checked for archival right away; their commit dates fill in as the background indexer catches up.
+        </p>
+    }
+    else if (_searchResults.Count > 0)
     {
         <div class="results-header fade-up">
             <span class="results-count">@_searchResults.Count result@(_searchResults.Count != 1 ? "s" : "")</span>
@@ -226,6 +335,17 @@
     private readonly List<Repository> _searchResults = new();
     private string _searchQuery = "";
     private string _searchQueryInput = "";
+
+    private const int ObsoleteLimit = 100;
+    private readonly List<Repository> _obsoleteResults = new();
+    private bool _showObsolete;
+    private bool _isLoadingObsolete;
+    private DateTimeOffset _staleBefore = DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// How many years without a commit make a repository a cleanup candidate.
+    /// </summary>
+    public int StaleYears { get; set; } = 2;
 
     private CancellationTokenSource? _debounceCts;
     private ElementReference _btnRef;
@@ -375,6 +495,9 @@
             return;
         }
 
+        // an actual search takes over the results area from the cleanup suggestions
+        _showObsolete = false;
+
         var results = await SearchService.SearchRepositories(GithubUsername, _searchQuery, new SearchOptions
         {
             HighlightPreTag = "<mark class=\"gss-mark\">",
@@ -388,6 +511,76 @@
         }
 
         StateHasChanged();
+    }
+
+    private async Task ToggleObsolete()
+    {
+        if (_showObsolete)
+        {
+            _showObsolete = false;
+            return;
+        }
+
+        await LoadObsolete();
+    }
+
+    private async Task OnStaleThresholdChanged()
+    {
+        if (_showObsolete)
+        {
+            await LoadObsolete();
+        }
+    }
+
+    private async Task LoadObsolete()
+    {
+        _isLoadingObsolete = true;
+        StateHasChanged();
+
+        try
+        {
+            _staleBefore = DateTimeOffset.UtcNow.AddYears(-StaleYears);
+            Logger.LogInformation("Looking for obsolete stars of {Username} not pushed since {StaleBefore}",
+                GithubUsername, _staleBefore);
+
+            var results = await SearchService.GetObsoleteRepositories(GithubUsername, _staleBefore, ObsoleteLimit);
+            _obsoleteResults.Clear();
+            _obsoleteResults.AddRange(results);
+            _showObsolete = true;
+            _searchResults.Clear();
+
+            if (_obsoleteResults.Count == 0)
+            {
+                Snackbar.Add("Nothing to clean up — your stars are alive and well ✨", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error while looking for obsolete stars", Severity.Error);
+            Logger.LogError(ex, "Error while looking for obsolete stars of {Username}", GithubUsername);
+        }
+        finally
+        {
+            _isLoadingObsolete = false;
+        }
+    }
+
+    private string StaleFor(Repository repo)
+    {
+        if (repo.PushedAt is not { } pushedAt)
+        {
+            return "No recent commits";
+        }
+
+        var days = (DateTimeOffset.UtcNow - pushedAt).TotalDays;
+        var years = (int)(days / 365);
+        if (years >= 1)
+        {
+            return $"No commits in {years} year{(years != 1 ? "s" : "")}";
+        }
+
+        var months = Math.Max(1, (int)(days / 30));
+        return $"No commits in {months} month{(months != 1 ? "s" : "")}";
     }
 
     private async Task SaveState()
