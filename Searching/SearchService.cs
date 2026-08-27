@@ -103,6 +103,38 @@ public class SearchService(
             .ToList() ?? [];
     }
 
+    /// <summary>
+    /// Returns repositories that are cleanup candidates: archived by their owner
+    /// or without a single push since <paramref name="staleBefore"/>.
+    /// Oldest (most dead) repositories come first.
+    /// </summary>
+    public async Task<IReadOnlyCollection<Repository>> GetObsoleteRepositories(string starredBy,
+        DateTimeOffset staleBefore,
+        int limit)
+    {
+        await MakeSureIndexExists();
+        await SetupIndex();
+
+        var index = client.Index(searchOptions.Value.RepositoriesIndexName);
+        var archived = nameof(Repository.Archived).ToCamelCase();
+        var pushedAt = nameof(Repository.PushedAtUnix).ToCamelCase();
+
+        // a push date of 0 means the repository has not been enriched by the background
+        // updater yet, so there is no way to tell whether it is dead
+        var filter = $"{nameof(Repository.StarredBy).ToCamelCase()} = {starredBy} " +
+                     $"AND ({archived} = true OR ({pushedAt} > 0 AND {pushedAt} < {staleBefore.ToUnixTimeSeconds()}))";
+
+        var searchQuery = new SearchQuery
+        {
+            Filter = filter,
+            Sort = [$"{pushedAt}:asc"],
+            Limit = limit,
+        };
+
+        var results = await index.SearchAsync<Repository>(string.Empty, searchQuery);
+        return results.Hits?.ToList() ?? [];
+    }
+
     public async Task<ResourceResults<IEnumerable<Repository>>> GetRepositories(int limit, int offset)
     {
         await MakeSureIndexExists();
@@ -163,7 +195,6 @@ public class SearchService(
 
     private async Task SetupIndex()
     {
-        logger.LogInformation("Updating Meilisearch search settings");
         var settings = new Settings
         {
             // SearchableAttributes = new[]
@@ -173,13 +204,33 @@ public class SearchService(
             FilterableAttributes = new[]
             {
                 nameof(Repository.StarredBy).ToCamelCase(),
+                nameof(Repository.Archived).ToCamelCase(),
+                nameof(Repository.PushedAtUnix).ToCamelCase(),
+            },
+            SortableAttributes = new[]
+            {
+                nameof(Repository.PushedAtUnix).ToCamelCase(),
             },
         };
 
         var index = await client.GetIndexAsync(searchOptions.Value.RepositoriesIndexName);
-        await index.UpdateSettingsAsync(settings);
+        var current = await index.GetSettingsAsync();
+        if (SameAttributes(current.FilterableAttributes, settings.FilterableAttributes) &&
+            SameAttributes(current.SortableAttributes, settings.SortableAttributes))
+        {
+            // updating settings re-indexes every document, so only do it when something changed
+            return;
+        }
+
+        logger.LogInformation("Updating Meilisearch search settings");
+        var task = await index.UpdateSettingsAsync(settings);
+        // filtering and sorting fail until the new settings are applied, so wait them out
+        await index.WaitForTaskAsync(task.TaskUid);
         logger.LogInformation("Meilisearch search settings updated");
     }
+
+    private static bool SameAttributes(IEnumerable<string>? current, IEnumerable<string>? expected) =>
+        (current ?? []).ToHashSet().SetEquals(expected ?? []);
 
     private async Task MakeSureIndexExists()
     {
@@ -190,7 +241,10 @@ public class SearchService(
         {
             logger.LogInformation("Index {IndexName} does not exist. Creating one",
                 searchOptions.Value.RepositoriesIndexName);
-            await client.CreateIndexAsync(searchOptions.Value.RepositoriesIndexName, searchOptions.Value.PrimaryKey);
+            var task = await client.CreateIndexAsync(searchOptions.Value.RepositoriesIndexName,
+                searchOptions.Value.PrimaryKey);
+            // creation is asynchronous, everything that follows would fail on a missing index
+            await client.WaitForTaskAsync(task.TaskUid);
             logger.LogInformation("Index {IndexName} created", searchOptions.Value.RepositoriesIndexName);
         }
         else

@@ -2,6 +2,8 @@ namespace GithubStarSearch.Searching;
 
 public class Repository
 {
+    private DateTimeOffset? _pushedAt;
+
     public required string Id { get; init; }
     public required string Slug { get; init; }
     public required string Owner { get; init; }
@@ -17,6 +19,37 @@ public class Repository
 
     public string Readme { get; set; } = "";
 
+    /// <summary>
+    /// Whether the repository was archived (made read-only) by its owner.
+    /// </summary>
+    public bool Archived { get; set; }
+
+    /// <summary>
+    /// Last time a commit was pushed to the repository.
+    /// Null when unknown, e.g. for documents indexed before this field was introduced.
+    /// </summary>
+    public DateTimeOffset? PushedAt
+    {
+        get => _pushedAt;
+        set
+        {
+            _pushedAt = value;
+            PushedAtUnix = value?.ToUnixTimeSeconds() ?? 0;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="PushedAt"/> in seconds since the unix epoch, 0 when unknown.
+    /// Meilisearch can only filter and sort on numbers, so the date is duplicated here.
+    /// </summary>
+    public long PushedAtUnix { get; set; }
+
+    /// <summary>
+    /// True when the repository has not been pushed to since <paramref name="staleBefore"/>.
+    /// Repositories with an unknown push date are never considered stale.
+    /// </summary>
+    public bool IsStale(DateTimeOffset staleBefore) => PushedAt is { } pushedAt && pushedAt < staleBefore;
+
     public static Repository FromGithubRepository(Octokit.Repository repository, string starredBy) => new()
     {
         Id = ComputeRepositoryId(starredBy, repository.Id),
@@ -26,6 +59,8 @@ public class Repository
         UpdatedAt = repository.UpdatedAt,
         StarredBy = starredBy,
         Description = repository.Description,
+        Archived = repository.Archived,
+        PushedAt = repository.PushedAt,
     };
 
     private static string ComputeRepositoryId(string starredBy, long id)

@@ -78,6 +78,8 @@ public class RepositoryUpdater(ILogger<RepositoryUpdater> logger, IServiceProvid
 
         repository.Description = details.Description;
         repository.UpdatedAt = details.UpdatedAt;
+        repository.Archived = details.Archived;
+        repository.PushedAt = details.PushedAt;
         var readme = await GetReadme(repository, github);
         logger.LogInformation("Updating README for {Owner}/{Slug}", repository.Owner, repository.Slug);
         repository.Readme = readme;
