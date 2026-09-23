@@ -8,6 +8,8 @@
     <RootNamespace>GithubStarSearch</RootNamespace>
     <AssemblyName>GithubStarSearch</AssemblyName>
     <UserSecretsId>b0c8effa-6d4b-4e57-8476-3989524d30a4</UserSecretsId>
+    <!-- launch video source project (Hyperframes), not part of the app -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);brag-output/**</DefaultItemExcludes>
   </PropertyGroup>
   
   <ItemGroup>
