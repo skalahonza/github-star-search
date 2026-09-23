@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>GitHub Star Search — brag</title>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/audio-data.js"></script>
+    <style>
+      @font-face { font-family: "Space Grotesk"; font-weight: 400; src: url("assets/fonts/space-grotesk-latin-400-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Space Grotesk"; font-weight: 500; src: url("assets/fonts/space-grotesk-latin-500-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Space Grotesk"; font-weight: 600; src: url("assets/fonts/space-grotesk-latin-600-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Space Grotesk"; font-weight: 700; src: url("assets/fonts/space-grotesk-latin-700-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Space Mono"; font-weight: 400; src: url("assets/fonts/space-mono-latin-400-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Space Mono"; font-weight: 700; src: url("assets/fonts/space-mono-latin-700-normal.woff2") format("woff2"); }
+
+      :root {
+        --bg: #08080f;
+        --text: #c8c6d8;
+        --title: #e0deef;
+        --muted: #8886a0;
+        --desc: #a09fba;
+        --accent: #7e6fff;
+        --blue: #4a86ff;
+        --amber: #ffb04a;
+        --green: #3dcb6c;
+        --mark: #a899ff;
+        --card: rgba(22, 22, 42, 0.78);
+        --line: rgba(126, 111, 255, 0.22);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+        overflow: hidden;
+      }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+      .layer, .scene { position: absolute; inset: 0; }
+      .inner { position: absolute; inset: 0; }
+      .mono { font-family: "Space Mono", monospace; }
+
+      /* ── background ── */
+      .nebula { position: absolute; border-radius: 50%; filter: blur(110px); }
+      .nebula .core { width: 100%; height: 100%; border-radius: 50%; }
+      #neb-a { width: 900px; height: 900px; left: -260px; top: -320px; }
+      #neb-a .core { background: #7e6fff; opacity: 0.2; }
+      #neb-b { width: 800px; height: 800px; right: -260px; top: 260px; }
+      #neb-b .core { background: #4a86ff; opacity: 0.15; }
+      #neb-c { width: 700px; height: 700px; left: 620px; bottom: -420px; }
+      #neb-c .core { background: #c03bff; opacity: 0.13; }
+      #neb-d { width: 460px; height: 460px; left: -120px; top: 640px; }
+      #neb-d .core { background: #3dcb6c; opacity: 0.08; }
+      #stars { position: absolute; inset: -60px; }
+      .star { position: absolute; border-radius: 50%; background: rgb(190, 185, 255); }
+
+      /* ── shared UI ── */
+      .card {
+        background: var(--card);
+        border: 2px solid rgba(126, 111, 255, 0.2);
+        border-radius: 28px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), 0 0 80px rgba(126, 111, 255, 0.08);
+      }
+      .eyebrow { font-family: "Space Mono", monospace; font-size: 24px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; }
+      .card-label { display: flex; align-items: center; gap: 20px; height: 72px; }
+      .card-icon { width: 66px; height: 66px; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+      .card-icon-purple { background: rgba(126, 111, 255, 0.2); color: var(--accent); }
+      .card-icon-blue { background: rgba(74, 134, 255, 0.2); color: var(--blue); }
+      .card-label-text { font-size: 38px; font-weight: 600; color: var(--text); }
+      .input {
+        position: relative; height: 104px; border-radius: 22px;
+        background: rgba(8, 8, 15, 0.7); border: 3px solid rgba(126, 111, 255, 0.5);
+        box-shadow: 0 0 0 6px rgba(126, 111, 255, 0.12), 0 0 36px rgba(126, 111, 255, 0.14);
+        display: flex; align-items: center; padding-left: 86px; font-size: 40px; color: var(--text);
+      }
+      .input .icon-left { position: absolute; left: 26px; top: 50%; margin-top: -18px; display: flex; }
+      .input .placeholder { position: absolute; left: 86px; color: #7c7a94; }
+      .caret { display: inline-block; width: 3px; height: 46px; background: var(--mark); margin-left: 3px; }
+      .spinner { width: 34px; height: 34px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.3); border-top-color: #fff; }
+      mark { background: rgba(126, 111, 255, 0.28); color: var(--mark); padding: 1px 7px; border-radius: 7px; display: inline-block; line-height: 1.15; }
+      .cursor { position: absolute; left: 0; top: 0; width: 54px; height: 54px; opacity: 0; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6)); }
+
+      /* ── scene 1: the star pile ── */
+      #s1-left { position: absolute; left: 140px; top: 170px; width: 820px; }
+      #s1-count { font-size: 250px; font-weight: 700; line-height: 1.12; color: var(--title); letter-spacing: -0.04em; margin-top: 34px; display: flex; align-items: center; gap: 26px; font-variant-numeric: tabular-nums; }
+      #s1-count .c-star { color: #ffb545; font-size: 170px; }
+      #s1-sub { font-size: 50px; color: var(--desc); margin-top: 26px; }
+      #s1-pill {
+        position: absolute; left: 140px; top: 780px; padding: 26px 38px; border-radius: 26px;
+        background: rgba(20, 20, 38, 0.9); border: 2px solid rgba(255, 176, 74, 0.35);
+        font-size: 38px; color: var(--text); display: flex; gap: 16px; align-items: center; white-space: nowrap;
+      }
+      #s1-pill b { color: var(--amber); font-weight: 600; }
+      #s1-listwrap {
+        position: absolute; left: 1010px; top: -40px; width: 860px; height: 1160px; perspective: 1500px;
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+        mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+      }
+      #s1-tilt { width: 100%; height: 100%; transform: rotateY(-16deg) rotateX(4deg); transform-origin: 30% 50%; }
+      .row {
+        height: 104px; margin-bottom: 16px; border-radius: 20px; padding: 0 30px;
+        background: rgba(20, 20, 38, 0.82); border: 2px solid rgba(126, 111, 255, 0.16);
+        display: flex; align-items: center; gap: 20px; font-size: 32px;
+      }
+      .row .rs { color: #ffb545; font-size: 30px; }
+      .row .ro { color: var(--muted); }
+      .row .rn { color: var(--text); font-weight: 500; }
+      .row .rl { margin-left: auto; display: flex; align-items: center; gap: 10px; font-family: "Space Mono", monospace; font-size: 22px; color: var(--muted); }
+      .row .dot { width: 16px; height: 16px; border-radius: 50%; }
+
+      /* ── scene 2: reveal ── */
+      #s2-warp { position: absolute; left: 960px; top: 470px; width: 0; height: 0; }
+      .streak { position: absolute; left: 0; top: -2px; width: 520px; height: 4px; border-radius: 4px; transform-origin: 0 50%; background: linear-gradient(90deg, rgba(168, 153, 255, 0), #b9b0ff); opacity: 0; }
+      .center-stack { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .logo-wrap { position: relative; width: 290px; height: 290px; }
+      .logo-wrap img { position: relative; width: 100%; height: 100%; display: block; }
+      .halo { position: absolute; left: -150px; top: -150px; width: 590px; height: 590px; border-radius: 50%; background: radial-gradient(circle, rgba(126, 111, 255, 0.55) 0%, rgba(126, 111, 255, 0.12) 45%, transparent 70%); }
+      .wordmark { font-size: 124px; font-weight: 700; letter-spacing: -0.03em; color: var(--title); margin-top: 34px; line-height: 1.05; }
+      #s2-tag { margin-top: 26px; }
+
+      /* ── scene 3: probe ── */
+      #s3-eyebrow { position: absolute; left: 400px; top: 150px; color: var(--mark); }
+      #s3-card { position: absolute; left: 400px; top: 230px; width: 1120px; padding: 56px; }
+      #s3-input { margin-top: 36px; }
+      #probe-btn {
+        position: relative; margin-top: 28px; height: 108px; border-radius: 22px; overflow: hidden;
+        background: linear-gradient(135deg, #7e6fff 0%, #5b8aff 100%);
+        box-shadow: 0 8px 48px rgba(126, 111, 255, 0.55), 0 0 80px rgba(126, 111, 255, 0.22);
+        color: #fff; font-size: 40px; font-weight: 600; letter-spacing: 0.02em;
+      }
+      .btn-state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+      #probe-busy { opacity: 0; }
+      #probe-shine { position: absolute; top: 0; left: 0; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent); }
+      #s3-caption { margin-top: 28px; font-size: 28px; color: var(--muted); line-height: 1.5; }
+      #snackbar {
+        position: absolute; right: 90px; top: 70px; padding: 26px 36px; border-radius: 22px;
+        background: rgba(18, 40, 30, 0.95); border: 2px solid rgba(61, 203, 108, 0.5);
+        color: var(--green); font-size: 34px; font-weight: 600; display: flex; gap: 18px; align-items: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      #s3-particles { position: absolute; left: 960px; top: 584px; width: 0; height: 0; }
+      .pt { position: absolute; left: 0; top: 0; border-radius: 50%; opacity: 0; }
+
+      /* ── scene 4: search ── */
+      #s4-card { position: absolute; left: 140px; top: 56px; width: 1640px; padding: 34px 40px; }
+      #s4-card .card-label { height: 60px; }
+      #s4-input { margin-top: 22px; height: 100px; border-color: rgba(74, 134, 255, 0.6); box-shadow: 0 0 0 6px rgba(74, 134, 255, 0.12), 0 0 36px rgba(74, 134, 255, 0.16); }
+      #q-minus { color: #ff8a6a; white-space: pre; }
+      #q-main, #s3-typed { white-space: pre; }
+      #s4-head { position: absolute; left: 144px; top: 326px; width: 1636px; height: 54px; display: flex; align-items: center; gap: 22px; }
+      .count-pill {
+        position: relative; height: 50px; min-width: 200px; padding: 0 22px; border-radius: 30px;
+        background: rgba(126, 111, 255, 0.16); border: 2px solid rgba(126, 111, 255, 0.4);
+        font-family: "Space Mono", monospace; font-size: 24px; color: var(--mark); overflow: hidden;
+      }
+      .count-pill span { position: absolute; left: 0; right: 0; top: 0; height: 46px; display: flex; align-items: center; justify-content: center; }
+      .results-label { font-size: 30px; color: var(--muted); }
+      .results-label strong { color: var(--text); font-weight: 600; }
+      #s4-legend { margin-left: auto; display: flex; gap: 14px; align-items: center; font-family: "Space Mono", monospace; font-size: 22px; color: var(--muted); }
+      .lg { padding: 6px 16px; border-radius: 18px; border: 2px solid rgba(126, 111, 255, 0.25); }
+      #s4-grid { position: absolute; left: 140px; top: 404px; width: 1640px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+      .repo-card {
+        position: relative; height: 300px; padding: 30px 36px; border-radius: 26px; overflow: hidden;
+        background: rgba(20, 20, 38, 0.86); border: 2px solid rgba(126, 111, 255, 0.2);
+      }
+      .repo-streak { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, transparent, #7e6fff, #4a86ff, transparent); }
+      .repo-title { font-size: 36px; font-weight: 600; line-height: 1.25; white-space: nowrap; }
+      .repo-title .owner { color: var(--muted); }
+      .repo-title .slug { color: var(--text); }
+      .repo-desc { margin: 12px 0 0; font-size: 25px; line-height: 1.5; color: var(--desc); height: 76px; overflow: hidden; }
+      .repo-readme { margin-top: 10px; font-size: 22px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .repo-footer { position: absolute; left: 36px; right: 36px; bottom: 22px; padding-top: 14px; border-top: 2px solid rgba(126, 111, 255, 0.12); display: flex; justify-content: space-between; align-items: center; }
+      .updated { font-family: "Space Mono", monospace; font-size: 20px; color: var(--muted); }
+      .view-btn { font-size: 21px; font-weight: 600; color: var(--mark); padding: 8px 18px; border-radius: 12px; border: 2px solid rgba(126, 111, 255, 0.35); }
+      #c4-x { position: absolute; inset: 0; border-radius: 26px; border: 3px solid #ff6a4a; box-shadow: inset 0 0 60px rgba(255, 106, 74, 0.25); opacity: 0; }
+
+      /* ── scene 5: cleanup ── */
+      #s5-bar {
+        position: absolute; left: 140px; top: 80px; width: 1640px; height: 150px; padding: 0 36px;
+        border-radius: 26px; background: rgba(20, 20, 38, 0.86); border: 2px solid rgba(255, 176, 74, 0.28);
+        display: flex; align-items: center; gap: 26px;
+      }
+      .cleanup-icon { width: 76px; height: 76px; border-radius: 18px; background: rgba(255, 176, 74, 0.14); border: 2px solid rgba(255, 176, 74, 0.3); display: flex; align-items: center; justify-content: center; font-size: 38px; }
+      .cleanup-title { font-size: 36px; font-weight: 600; color: var(--text); }
+      .cleanup-sub { font-size: 25px; color: var(--muted); margin-top: 4px; }
+      #s5-select { margin-left: auto; height: 76px; width: 340px; border-radius: 16px; background: rgba(12, 12, 24, 0.9); border: 2px solid rgba(126, 111, 255, 0.3); font-size: 27px; color: var(--text); display: flex; align-items: center; justify-content: space-between; padding: 0 22px; }
+      #cleanup-btn { position: relative; height: 76px; width: 360px; border-radius: 16px; background: rgba(255, 176, 74, 0.14); border: 2px solid rgba(255, 176, 74, 0.5); color: var(--amber); font-size: 28px; font-weight: 600; overflow: hidden; }
+      #cleanup-busy { opacity: 0; }
+      #cleanup-busy .spinner { width: 28px; height: 28px; border-color: rgba(255, 176, 74, 0.3); border-top-color: var(--amber); }
+      #s5-head { position: absolute; left: 144px; top: 270px; height: 54px; display: flex; align-items: center; gap: 22px; }
+      #s5-head .count-pill { min-width: 330px; background: rgba(255, 176, 74, 0.12); border-color: rgba(255, 176, 74, 0.4); color: var(--amber); }
+      #s5-grid { position: absolute; left: 140px; top: 360px; width: 1640px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+      .obs { height: 400px; border-color: rgba(255, 176, 74, 0.24); }
+      .obs .repo-streak { background: linear-gradient(90deg, transparent, #ffb04a, #ff6a4a, transparent); }
+      .badges { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+      .badge { font-family: "Space Mono", monospace; font-size: 21px; padding: 7px 16px; border-radius: 22px; white-space: nowrap; }
+      .badge-archived { background: rgba(255, 106, 74, 0.14); border: 2px solid rgba(255, 106, 74, 0.35); color: #ff8a6a; }
+      .badge-stale { background: rgba(255, 176, 74, 0.12); border: 2px solid rgba(255, 176, 74, 0.32); color: var(--amber); }
+      .obs .repo-desc { height: auto; margin-top: 18px; }
+      .unstar { font-size: 22px; font-weight: 600; color: var(--mark); padding: 12px 22px; border-radius: 12px; border: 2px solid rgba(126, 111, 255, 0.4); display: flex; gap: 10px; align-items: center; }
+
+      /* ── scene 6: outro ── */
+      #s6-tag { font-size: 64px; font-weight: 500; color: var(--mark); margin-top: 18px; }
+      #s6-row { display: flex; gap: 22px; margin-top: 46px; }
+      .pill { height: 70px; padding: 0 30px; border-radius: 36px; display: flex; align-items: center; gap: 14px; font-size: 30px; background: rgba(22, 22, 42, 0.8); border: 2px solid rgba(126, 111, 255, 0.3); }
+      #s6-url { font-family: "Space Mono", monospace; color: var(--text); }
+      #s6-gh { color: var(--text); }
+      #s6-gh .gs { color: #ffb545; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="24.5">
+      <!-- ── Background: nebulae + starfield (whole video) ── -->
+      <div id="bg" class="clip layer" data-start="0" data-duration="24.5" data-track-index="0">
+        <div id="neb-a" class="nebula"><div class="core"></div></div>
+        <div id="neb-b" class="nebula"><div class="core"></div></div>
+        <div id="neb-c" class="nebula"><div class="core"></div></div>
+        <div id="neb-d" class="nebula"><div class="core"></div></div>
+        <div id="stars"></div>
+      </div>
+
+      <!-- ── Scene 1: the star pile ── -->
+      <section id="s1" class="clip scene" data-start="0" data-duration="4.7" data-track-index="1">
+        <div class="inner" id="s1-inner">
+          <div id="s1-listwrap" data-layout-allow-overflow><div id="s1-tilt"><div id="s1-list"></div></div></div>
+          <div id="s1-left">
+            <div class="eyebrow" id="s1-eyebrow">Your GitHub stars</div>
+            <div id="s1-count"><span class="c-star">★</span><span id="count-num">0</span></div>
+            <div id="s1-sub">starred repositories</div>
+          </div>
+          <div id="s1-pill"><span>🔍</span><span>Last week's bookmark: <b>somewhere in here.</b></span></div>
+        </div>
+      </section>
+
+      <!-- ── Scene 2: reveal ── -->
+      <section id="s2" class="clip scene" data-start="4.45" data-duration="2.15" data-track-index="2">
+        <div class="inner" id="s2-inner">
+          <div id="s2-warp"></div>
+          <div class="center-stack">
+            <div class="logo-wrap" id="s2-logo"><div class="halo" id="s2-halo"></div><img src="assets/img/logo.png" alt="" /></div>
+            <div class="wordmark" id="s2-word">GitHub Star Search</div>
+            <div class="eyebrow" id="s2-tag">Full-text search for your GitHub stars</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Scene 3: probe the stars ── -->
+      <section id="s3" class="clip scene" data-start="6.6" data-duration="4.1" data-track-index="1">
+        <div class="inner" id="s3-inner">
+          <div class="eyebrow" id="s3-eyebrow">01 · Fire the probe</div>
+          <div class="card" id="s3-card">
+            <div class="card-label">
+              <div class="card-icon card-icon-purple">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </div>
+              <span class="card-label-text">Enter your GitHub Username</span>
+            </div>
+            <div class="input" id="s3-input">
+              <span class="icon-left" style="color:#7e6fff">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+              </span>
+              <span class="placeholder" id="s3-ph">Enter your GitHub username…</span>
+              <span id="s3-typed"></span><span class="caret" id="s3-caret"></span>
+            </div>
+            <div id="probe-btn">
+              <div id="probe-shine" data-layout-allow-overflow></div>
+              <div class="btn-state" id="probe-idle">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M9.19 6.35c-2.04 2.29-3.44 5.58-3.57 5.89L2 10.69l4.5-4.5c.25-.25.64-.36 1.01-.27l1.68.43zm10.46 10.46l-1.61 1.61.43 1.68c.09.37-.02.76-.27 1.01L13.7 21.6l-1.55-3.62c.31-.13 3.58-1.53 5.88-3.57l1.62 1.4zm1.29-12.94C19.8 1.4 17.14.06 14.38.06c-3 0-5.9 1.23-7.98 3.38L4 5.85 5.17 9l-2.83 2.83c-.78.78-.78 2.05 0 2.83l7 7c.78.78 2.05.78 2.83 0L15 18.83l3.15 1.17 2.41-2.41c2.15-2.08 3.38-4.98 3.38-7.98 0-2.76-1.34-5.42-3.0-7.54zM14.5 11c-1.38 0-2.5-1.12-2.5-2.5S13.12 6 14.5 6 17 7.12 17 8.5 15.88 11 14.5 11z"/></svg>
+                <span>Probe Stars 🌟</span>
+              </div>
+              <div class="btn-state" id="probe-busy"><div class="spinner" id="probe-spin"></div><span>Probing the universe…</span></div>
+            </div>
+            <div id="s3-caption">You only have to do this once. Your username lives in the URL, so bookmark it and share it.</div>
+          </div>
+          <div id="s3-particles"></div>
+          <div id="snackbar"><span>Stars indexed — ready to explore! 🚀</span></div>
+          <svg class="cursor" id="cursor3" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#ffffff" stroke="#08080f" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </div>
+      </section>
+
+      <!-- ── Scene 4: search as you type ── -->
+      <section id="s4" class="clip scene" data-start="10.7" data-duration="5.9" data-track-index="2">
+        <div class="inner" id="s4-inner">
+          <div class="card" id="s4-card">
+            <div class="card-label">
+              <div class="card-icon card-icon-blue">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              </div>
+              <span class="card-label-text">Search Starred Repositories</span>
+            </div>
+            <div class="input" id="s4-input">
+              <span class="icon-left" style="color:#4a86ff">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              </span>
+              <span class="placeholder" id="s4-ph">Search starred repositories…</span>
+              <span id="q-main"></span><span id="q-minus"></span><span class="caret" id="s4-caret"></span>
+            </div>
+          </div>
+          <div id="s4-head">
+            <div class="count-pill"><span id="cnt4">4 results</span><span id="cnt3">3 results</span></div>
+            <span class="results-label">matching "<strong id="s4-qlabel">markdown</strong>"</span>
+            <div id="s4-legend"><span>matched in</span><span class="lg" id="lg-name">name</span><span class="lg" id="lg-desc">description</span><span class="lg" id="lg-readme">README</span></div>
+          </div>
+          <div id="s4-grid">
+            <div class="repo-card" id="c1">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">xoofx/</span><span class="slug">markdig</span></div>
+              <p class="repo-desc">A fast, powerful, CommonMark compliant, extensible <mark class="m-desc">Markdown</mark> processor for .NET</p>
+              <div class="repo-readme">Markdig: a fast, extensible <mark class="m-readme">Markdown</mark> processor for .NET.</div>
+              <div class="repo-footer"><span class="updated">Updated 09/14/2026 08:12</span><span class="view-btn">View Repository</span></div>
+            </div>
+            <div class="repo-card" id="c2">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">markdown-it/</span><span class="slug"><mark class="m-name">markdown</mark>-it</span></div>
+              <p class="repo-desc"><mark class="m-desc">Markdown</mark> parser, done right. 100% CommonMark support, extensions, syntax plugins &amp; high speed</p>
+              <div class="repo-readme">Follows the CommonMark spec, adds syntax extensions &amp; sugar.</div>
+              <div class="repo-footer"><span class="updated">Updated 09/02/2026 17:40</span><span class="view-btn">View Repository</span></div>
+            </div>
+            <div class="repo-card" id="c3">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">yuin/</span><span class="slug">goldmark</span></div>
+              <p class="repo-desc">A <mark class="m-desc">markdown</mark> parser written in Go. Easy to extend, standard (CommonMark) compliant, well structured.</p>
+              <div class="repo-readme">goldmark is a <mark class="m-readme">Markdown</mark> parser compliant with CommonMark.</div>
+              <div class="repo-footer"><span class="updated">Updated 08/27/2026 11:05</span><span class="view-btn">View Repository</span></div>
+            </div>
+            <div class="repo-card" id="c4">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">lepture/</span><span class="slug">mistune</span></div>
+              <p class="repo-desc">A fast yet powerful Python <mark class="m-desc">Markdown</mark> parser with renderers and plugins.</p>
+              <div class="repo-readme">Mistune v3 is a fast yet powerful Python <mark class="m-readme">Markdown</mark> parser.</div>
+              <div class="repo-footer"><span class="updated">Updated 08/19/2026 09:31</span><span class="view-btn">View Repository</span></div>
+              <div id="c4-x"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Scene 5: cleanup ── -->
+      <section id="s5" class="clip scene" data-start="16.6" data-duration="4.0" data-track-index="1">
+        <div class="inner" id="s5-inner">
+          <div id="s5-bar">
+            <div class="cleanup-icon">🧹</div>
+            <div>
+              <div class="cleanup-title">Cleanup suggestions</div>
+              <div class="cleanup-sub">Find stars that were archived by their owner or went dark years ago.</div>
+            </div>
+            <div id="s5-select"><span>Silent for 2+ years</span><span style="color:#8886a0">▾</span></div>
+            <div id="cleanup-btn">
+              <div class="btn-state" id="cleanup-idle"><span>Suggest cleanup 🧹</span></div>
+              <div class="btn-state" id="cleanup-busy"><div class="spinner" id="cleanup-spin"></div><span>Scanning orbit…</span></div>
+            </div>
+          </div>
+          <div id="s5-head">
+            <div class="count-pill"><span id="cnt37">37 obsolete stars</span><span id="cnt36">36 obsolete stars</span></div>
+            <span class="results-label">archived, or no commits since <strong>09/2024</strong></span>
+          </div>
+          <div id="s5-grid">
+            <div class="repo-card obs" id="o1">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">request/</span><span class="slug">request</span></div>
+              <div class="badges"><span class="badge badge-archived">📦 Archived by owner</span><span class="badge badge-stale">💤 No commits in 6 years</span></div>
+              <p class="repo-desc">Simplified HTTP request client.</p>
+              <div class="repo-footer"><span class="updated">Last commit 02/10/2020</span><span class="unstar">★ Open &amp; unstar</span></div>
+            </div>
+            <div class="repo-card obs" id="o2">
+              <div class="repo-streak"></div>
+              <div class="repo-title"><span class="owner">atom/</span><span class="slug">atom</span></div>
+              <div class="badges"><span class="badge badge-archived">📦 Archived by owner</span><span class="badge badge-stale">💤 No commits in 3 years</span></div>
+              <p class="repo-desc">The hackable text editor.</p>
+              <div class="repo-footer"><span class="updated">Last commit 01/05/2023</span><span class="unstar">★ Open &amp; unstar</span></div>
+            </div>
+          </div>
+          <svg class="cursor" id="cursor5" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#ffffff" stroke="#08080f" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </div>
+      </section>
+
+      <!-- ── Scene 6: outro ── -->
+      <section id="s6" class="clip scene" data-start="20.6" data-duration="3.9" data-track-index="2">
+        <div class="inner" id="s6-inner">
+          <div class="center-stack">
+            <div class="logo-wrap" id="s6-logo"><div class="halo" id="s6-halo"></div><img src="assets/img/logo.png" alt="" /></div>
+            <div class="wordmark" id="s6-word">GitHub Star Search</div>
+            <div id="s6-tag">Find your stars again.</div>
+            <div id="s6-row">
+              <div class="pill" id="s6-url">gss.janskala.cz</div>
+              <div class="pill" id="s6-gh"><span>Star on GitHub</span><span class="gs">★</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Audio: music bed (ducked under narration) ── -->
+      <audio id="music" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3" data-start="0" data-duration="24.5" data-track-index="10" data-volume="1"
+        data-automation='{"version":1,"lanes":[{"target":"volume","points":[{"t":0,"v":0},{"t":0.5,"v":0.15},{"t":4.55,"v":0.15},{"t":4.75,"v":0.24},{"t":4.95,"v":0.15},{"t":23.4,"v":0.15},{"t":23.75,"v":0.32},{"t":24.5,"v":0.1}]}]}'></audio>
+
+      <!-- narration (Kokoro af_heart) -->
+      <audio id="vo1" src="assets/vo/vo1.wav" data-start="0.3" data-duration="4.27" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo2" src="assets/vo/vo2.wav" data-start="4.85" data-duration="1.47" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo3" src="assets/vo/vo3.wav" data-start="6.75" data-duration="3.67" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo4" src="assets/vo/vo4.wav" data-start="10.9" data-duration="5.4" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo5" src="assets/vo/vo5.wav" data-start="16.75" data-duration="3.56" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo6" src="assets/vo/vo6.wav" data-start="20.85" data-duration="2.56" data-track-index="3" data-volume="1"></audio>
+
+      <!-- SFX -->
+      <audio id="sfx-pill" src="assets/sfx/drop_002.ogg" data-start="2.35" data-duration="0.19" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-warp" src="assets/sfx/impactSoft_heavy_003.ogg" data-start="4.5" data-duration="0.54" data-track-index="12" data-volume="0.55"></audio>
+      <audio id="sfx-logo" src="assets/sfx/impactSoft_medium_001.ogg" data-start="4.9" data-duration="0.18" data-track-index="13" data-volume="0.7"></audio>
+      <audio id="sfx-click3" src="assets/sfx/click2.ogg" data-start="7.97" data-duration="0.06" data-track-index="11" data-volume="0.75"></audio>
+      <audio id="sfx-probe" src="assets/sfx/impactSoft_medium_004.ogg" data-start="8.02" data-duration="0.15" data-track-index="12" data-volume="0.55"></audio>
+      <audio id="sfx-ok" src="assets/sfx/impactBell_heavy_000.ogg" data-start="9.3" data-duration="1.2" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-cards" src="assets/sfx/card-slide-1.ogg" data-start="11.7" data-duration="0.5" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="sfx-kick" src="assets/sfx/drop_002.ogg" data-start="15.35" data-duration="0.19" data-track-index="12" data-volume="0.6"></audio>
+      <audio id="sfx-click5" src="assets/sfx/click2.ogg" data-start="16.99" data-duration="0.06" data-track-index="11" data-volume="0.75"></audio>
+      <audio id="sfx-obs" src="assets/sfx/card-slide-1.ogg" data-start="17.8" data-duration="0.5" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="sfx-unstar" src="assets/sfx/click2.ogg" data-start="19.54" data-duration="0.06" data-track-index="13" data-volume="0.7"></audio>
+      <audio id="sfx-gone" src="assets/sfx/drop_002.ogg" data-start="19.62" data-duration="0.19" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-outro" src="assets/sfx/impactSoft_medium_001.ogg" data-start="20.85" data-duration="0.18" data-track-index="12" data-volume="0.65"></audio>
+      <audio id="sfx-bell" src="assets/sfx/impactBell_heavy_003.ogg" data-start="22.3" data-duration="0.65" data-track-index="13" data-volume="0.45"></audio>
+      <!-- key ticks, one per typed character -->
+      <audio id="key-0" src="assets/sfx/keypress-003.wav" data-start="6.950" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-1" src="assets/sfx/keypress-007.wav" data-start="7.033" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-2" src="assets/sfx/keypress-011.wav" data-start="7.117" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-3" src="assets/sfx/keypress-015.wav" data-start="7.200" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-4" src="assets/sfx/keypress-019.wav" data-start="7.283" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-5" src="assets/sfx/keypress-023.wav" data-start="7.367" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-6" src="assets/sfx/keypress-027.wav" data-start="7.450" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-7" src="assets/sfx/keypress-031.wav" data-start="10.950" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-8" src="assets/sfx/keypress-003.wav" data-start="11.027" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-9" src="assets/sfx/keypress-007.wav" data-start="11.104" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-10" src="assets/sfx/keypress-011.wav" data-start="11.181" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-11" src="assets/sfx/keypress-015.wav" data-start="11.258" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-12" src="assets/sfx/keypress-019.wav" data-start="11.335" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-13" src="assets/sfx/keypress-023.wav" data-start="11.412" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-14" src="assets/sfx/keypress-027.wav" data-start="11.488" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-15" src="assets/sfx/keypress-031.wav" data-start="14.627" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-16" src="assets/sfx/keypress-003.wav" data-start="14.704" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-17" src="assets/sfx/keypress-007.wav" data-start="14.781" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-18" src="assets/sfx/keypress-011.wav" data-start="14.858" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="key-19" src="assets/sfx/keypress-015.wav" data-start="14.935" data-duration="0.14" data-track-index="21" data-volume="0.32"></audio>
+      <audio id="key-20" src="assets/sfx/keypress-019.wav" data-start="15.012" data-duration="0.14" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="key-21" src="assets/sfx/keypress-023.wav" data-start="15.088" data-duration="0.14" data-track-index="20" data-volume="0.32"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const prand = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+      // ── Starfield (seeded) ──
+      const starsEl = document.getElementById("stars");
+      for (let i = 0; i < 170; i++) {
+        const s = document.createElement("div");
+        s.className = "star";
+        const r = 1.2 + prand(i * 3 + 1) * 2.6;
+        s.style.width = s.style.height = r + "px";
+        s.style.left = (prand(i * 7 + 2) * 2040).toFixed(1) + "px";
+        s.style.top = (prand(i * 11 + 3) * 1200).toFixed(1) + "px";
+        s.style.opacity = (0.35 + prand(i * 5 + 4) * 0.6).toFixed(2);
+        starsEl.appendChild(s);
+        const cyc = 1.4 + prand(i * 13 + 5) * 2.2;
+        tl.to(s, { opacity: 0.12, duration: cyc / 2, ease: "sine.inOut", yoyo: true, repeat: Math.max(0, Math.floor(24 / cyc) * 2 - 1) }, prand(i * 17 + 6) * 0.8);
+      }
+      tl.fromTo("#stars", { y: 0 }, { y: -50, duration: 24.5, ease: "none" }, 0);
+      tl.fromTo("#neb-a", { x: 0, y: 0 }, { x: 80, y: 50, duration: 24.5, ease: "sine.inOut" }, 0);
+      tl.fromTo("#neb-b", { x: 0, y: 0 }, { x: -70, y: -40, duration: 24.5, ease: "sine.inOut" }, 0);
+      tl.fromTo("#neb-c", { x: 0, y: 0 }, { x: 60, y: -60, duration: 24.5, ease: "sine.inOut" }, 0);
+
+      // ── Seek-safe typing: text is a pure function of tween progress ──
+      function typeText(el, text, at, cps) {
+        const p = { n: 0 };
+        el.textContent = "";
+        tl.to(p, { n: text.length, duration: text.length / cps, ease: "none",
+          onUpdate() { el.textContent = text.slice(0, Math.round(p.n)); } }, at);
+        return text.length / cps;
+      }
+      // ════ Scene 1 — the star pile (0 – 4.7) ════
+      const repos = [
+        ["torvalds/", "linux", "C", "#555555"], ["facebook/", "react", "JavaScript", "#f1e05a"], ["microsoft/", "vscode", "TypeScript", "#3178c6"],
+        ["rust-lang/", "rust", "Rust", "#dea584"], ["junegunn/", "fzf", "Go", "#00ADD8"], ["BurntSushi/", "ripgrep", "Rust", "#dea584"],
+        ["neovim/", "neovim", "Vim Script", "#199f4b"], ["astral-sh/", "uv", "Rust", "#dea584"], ["denoland/", "deno", "Rust", "#dea584"],
+        ["sveltejs/", "svelte", "JavaScript", "#f1e05a"], ["tailwindlabs/", "tailwindcss", "TypeScript", "#3178c6"], ["jqlang/", "jq", "C", "#555555"],
+        ["meilisearch/", "meilisearch", "Rust", "#dea584"], ["dotnet/", "runtime", "C#", "#178600"], ["MudBlazor/", "MudBlazor", "C#", "#178600"],
+        ["excalidraw/", "excalidraw", "TypeScript", "#3178c6"], ["ollama/", "ollama", "Go", "#00ADD8"], ["pallets/", "flask", "Python", "#3572A5"],
+        ["fastapi/", "fastapi", "Python", "#3572A5"], ["oven-sh/", "bun", "Zig", "#ec915c"], ["vitejs/", "vite", "TypeScript", "#3178c6"],
+        ["tauri-apps/", "tauri", "Rust", "#dea584"], ["zed-industries/", "zed", "Rust", "#dea584"], ["jesseduffield/", "lazygit", "Go", "#00ADD8"],
+        ["charmbracelet/", "bubbletea", "Go", "#00ADD8"], ["gohugoio/", "hugo", "Go", "#00ADD8"], ["duckdb/", "duckdb", "C++", "#f34b7d"],
+        ["pola-rs/", "polars", "Rust", "#dea584"], ["sharkdp/", "bat", "Rust", "#dea584"], ["htmx-org/", "htmx", "JavaScript", "#f1e05a"],
+        ["withastro/", "astro", "TypeScript", "#3178c6"], ["grafana/", "grafana", "TypeScript", "#3178c6"], ["alacritty/", "alacritty", "Rust", "#dea584"],
+        ["tmux/", "tmux", "C", "#555555"], ["supabase/", "supabase", "TypeScript", "#3178c6"], ["django/", "django", "Python", "#3572A5"],
+        ["kubernetes/", "kubernetes", "Go", "#00ADD8"], ["nodejs/", "node", "JavaScript", "#f1e05a"], ["ggml-org/", "llama.cpp", "C++", "#f34b7d"],
+        ["octokit/", "octokit.net", "C#", "#178600"], ["prometheus/", "prometheus", "Go", "#00ADD8"], ["golang/", "go", "Go", "#00ADD8"],
+        ["vercel/", "next.js", "JavaScript", "#f1e05a"], ["hashicorp/", "terraform", "Go", "#00ADD8"], ["xoofx/", "markdig", "C#", "#178600"],
+      ];
+      const listEl = document.getElementById("s1-list");
+      for (let k = 0; k < 2; k++) {
+        repos.forEach((r) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          row.innerHTML = `<span class="rs">★</span><span><span class="ro">${r[0]}</span><span class="rn">${r[1]}</span></span><span class="rl"><span class="dot" style="background:${r[3]}"></span>${r[2]}</span>`;
+          listEl.appendChild(row);
+        });
+      }
+      // list whips past, accelerating (too fast to read on purpose)
+      tl.fromTo("#s1-list", { y: 60 }, { y: -8600, duration: 4.7, ease: "power2.in" }, 0);
+      tl.fromTo("#s1-tilt", { filter: "blur(0px)" }, { filter: "blur(3px)", duration: 3.5, ease: "power1.in" }, 1.0);
+      tl.fromTo("#s1-listwrap", { opacity: 0, x: 120 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0);
+      tl.fromTo("#s1-eyebrow", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      tl.fromTo("#s1-count", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)", transformOrigin: "0% 50%" }, 0.2);
+      tl.fromTo("#s1-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.45);
+      const cnt = { n: 0 };
+      const countEl = document.getElementById("count-num");
+      tl.to(cnt, { n: 512, duration: 1.6, ease: "power2.out", onUpdate() { countEl.textContent = Math.round(cnt.n); } }, 0.3);
+      tl.fromTo("#s1-pill", { opacity: 0, y: 40, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.7)" }, 2.35);
+      // exit: everything gets pulled toward the center (into the warp)
+      tl.to("#s1-inner", { scale: 0.55, opacity: 0, duration: 0.4, ease: "power3.in", transformOrigin: "50% 45%" }, 4.3);
+
+      // ════ Scene 2 — reveal (4.45 – 6.6) ════
+      const warp = document.getElementById("s2-warp");
+      for (let i = 0; i < 56; i++) {
+        const st = document.createElement("div");
+        st.className = "streak";
+        warp.appendChild(st);
+        const ang = (i / 56) * 360 + prand(i * 3 + 9) * 6;
+        const r0 = 40 + prand(i * 5 + 1) * 120;
+        const r1 = 700 + prand(i * 7 + 2) * 500;
+        const t0 = 4.45 + prand(i * 11 + 3) * 0.35;
+        gsap.set(st, { rotation: ang });
+        tl.fromTo(st, { x: r0, scaleX: 0.1, opacity: 0 }, {
+          keyframes: [
+            { x: (r0 + r1) / 2, scaleX: 1.2, opacity: 1, duration: 0.3, ease: "power2.in" },
+            { x: r1, scaleX: 0.6, opacity: 0, duration: 0.35, ease: "power1.out" },
+          ], ease: "none" }, t0);
+      }
+      // beat-locked: 4.91s (logo lands on the music beat)
+      tl.fromTo("#s2-logo", { scale: 0.3, rotation: -25, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.55, ease: "back.out(1.8)" }, 4.86);
+      tl.fromTo("#s2-word", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 5.1);
+      tl.fromTo("#s2-tag", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 5.35);
+      tl.to("#s2-inner", { opacity: 0, y: -60, duration: 0.3, ease: "power2.in" }, 6.3);
+
+      // ════ Scene 3 — probe the stars (6.6 – 10.7) ════
+      tl.fromTo("#s3-card", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 6.6);
+      tl.fromTo("#s3-eyebrow", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, 6.7);
+      tl.to("#s3-ph", { opacity: 0, duration: 0.1 }, 6.93);
+      const u = "octocat", ucps = 12;
+      typeText(document.getElementById("s3-typed"), u, 6.95, ucps);
+      tl.fromTo("#probe-shine", { x: -500 }, { x: 1300, duration: 1.1, ease: "power2.inOut" }, 7.0);
+      // cursor → button, click on "fire the probe"
+      tl.fromTo("#cursor3", { x: 1320, y: 860, opacity: 0 }, { x: 1010, y: 600, opacity: 1, duration: 0.5, ease: "power3.out" }, 7.4);
+      tl.to(["#cursor3", "#probe-btn"], { scale: 0.94, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1 }, 7.96);
+      tl.to("#probe-idle", { opacity: 0, duration: 0.12 }, 8.0);
+      tl.to("#probe-busy", { opacity: 1, duration: 0.12 }, 8.02);
+      tl.fromTo("#probe-spin", { rotation: 0 }, { rotation: 360 * 2, duration: 1.3, ease: "none" }, 8.0);
+      tl.to("#cursor3", { opacity: 0, x: 1060, y: 660, duration: 0.3 }, 8.9);
+      // warp burst from the button (seeded, ballistic, seek-safe)
+      const ptsEl = document.getElementById("s3-particles");
+      const pts = [];
+      for (let i = 0; i < 44; i++) {
+        const d = document.createElement("div");
+        d.className = "pt";
+        const sz = 5 + prand(i * 3 + 7) * 9;
+        d.style.width = d.style.height = sz + "px";
+        d.style.background = i % 2 ? "#7e6fff" : "#4a86ff";
+        d.style.boxShadow = `0 0 ${sz * 2}px ${i % 2 ? "#7e6fff" : "#4a86ff"}`;
+        ptsEl.appendChild(d);
+        const a = prand(i * 5 + 1) * Math.PI * 2;
+        const sp = 500 + prand(i * 9 + 2) * 900;
+        pts.push({ el: d, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.75 });
+      }
+      const burst = { T: 0 };
+      tl.to(burst, { T: 1, duration: 1.1, ease: "none", onUpdate() {
+        const t = burst.T * 1.1;
+        pts.forEach((p) => {
+          const k = 1 - Math.exp(-2.6 * t); // drag
+          gsap.set(p.el, { x: (p.vx * k) / 2.6, y: (p.vy * k) / 2.6, opacity: burst.T <= 0 ? 0 : Math.max(0, 1 - burst.T) });
+        });
+      } }, 8.02);
+      // indexed → back to idle + success snackbar
+      tl.to("#probe-busy", { opacity: 0, duration: 0.15 }, 9.28);
+      tl.to("#probe-idle", { opacity: 1, duration: 0.15 }, 9.3);
+      tl.fromTo("#snackbar", { opacity: 0, y: -40, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, 9.3);
+      tl.to("#s3-inner", { opacity: 0, y: -60, duration: 0.25, ease: "power2.in" }, 10.45);
+
+      // ════ Scene 4 — search as you type (10.7 – 16.6) ════
+      tl.fromTo("#s4-card", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 10.7);
+      tl.to("#s4-ph", { opacity: 0, duration: 0.1 }, 10.93);
+      const q1 = "markdown", qcps = 13;
+      typeText(document.getElementById("q-main"), q1, 10.95, qcps);
+      tl.fromTo("#s4-head", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 11.6);
+      tl.set("#cnt3", { yPercent: 100, opacity: 0 }, 0);
+      // cascade: fast in, then all four hold for reading
+      ["#c1", "#c2", "#c3", "#c4"].forEach((c, i) => {
+        tl.fromTo(c, { opacity: 0, y: 50, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" }, 11.7 + i * 0.14);
+      });
+      // "Names, descriptions, even READMEs" — highlights pulse in that order
+      const pulse = (sel, lg, at) => {
+        tl.fromTo(sel, { scale: 1, boxShadow: "0 0 0px rgba(168,153,255,0)" }, { scale: 1.12, boxShadow: "0 0 26px rgba(168,153,255,0.85)", duration: 0.22, ease: "power2.out", yoyo: true, repeat: 1 }, at);
+        tl.to(lg, { color: "#e0deef", borderColor: "rgba(168,153,255,0.9)", backgroundColor: "rgba(126,111,255,0.3)", duration: 0.2 }, at);
+      };
+      pulse(".m-name", "#lg-name", 12.15);
+      pulse(".m-desc", "#lg-desc", 12.62);
+      pulse(".m-readme", "#lg-readme", 13.4);
+      tl.fromTo("#s4-legend", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 11.9);
+      // "Put a minus on a word…"
+      const q2 = " -python";
+      typeText(document.getElementById("q-minus"), q2, 14.55, qcps);
+      tl.to("#s4-qlabel", { opacity: 0, duration: 0.1 }, 15.2);
+      const qlab = document.getElementById("s4-qlabel");
+      const ql = { v: 0 };
+      tl.to(ql, { v: 1, duration: 0.01, onUpdate() { qlab.textContent = ql.v >= 1 ? "markdown -python" : "markdown"; } }, 15.25);
+      tl.to("#s4-qlabel", { opacity: 1, duration: 0.15 }, 15.31);
+      // "…to kick it out": mistune leaves, count flips 4 → 3
+      tl.fromTo("#c4-x", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 15.15);
+      tl.to("#c4", { x: 26, duration: 0.05, yoyo: true, repeat: 3, ease: "none" }, 15.2);
+      tl.to("#c4", { x: 360, y: 80, rotation: 9, opacity: 0, duration: 0.45, ease: "power2.in", immediateRender: false }, 15.42);
+      tl.to("#cnt4", { yPercent: -100, opacity: 0, duration: 0.3, ease: "power2.inOut" }, 15.5);
+      tl.to("#cnt3", { yPercent: 0, opacity: 1, duration: 0.3, ease: "power2.inOut" }, 15.5);
+      tl.to("#s4-inner", { opacity: 0, x: -80, duration: 0.25, ease: "power2.in" }, 16.35);
+
+      // ════ Scene 5 — clean up dead stars (16.6 – 20.6) ════
+      tl.fromTo("#s5-bar", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 16.6);
+      tl.fromTo("#cursor5", { x: 1640, y: 520, opacity: 0 }, { x: 1560, y: 160, opacity: 1, duration: 0.35, ease: "power3.out" }, 16.62);
+      tl.to(["#cursor5", "#cleanup-btn"], { scale: 0.94, duration: 0.08, yoyo: true, repeat: 1, ease: "power2.in" }, 16.98);
+      tl.to("#cleanup-idle", { opacity: 0, duration: 0.1 }, 17.02);
+      tl.to("#cleanup-busy", { opacity: 1, duration: 0.1 }, 17.04);
+      tl.fromTo("#cleanup-spin", { rotation: 0 }, { rotation: 300, duration: 0.65, ease: "none" }, 17.02);
+      tl.to("#cleanup-busy", { opacity: 0, duration: 0.1 }, 17.68);
+      tl.to("#cleanup-idle", { opacity: 1, duration: 0.1 }, 17.7);
+      tl.set("#cnt36", { yPercent: 100, opacity: 0 }, 0);
+      tl.fromTo("#s5-head", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 17.66);
+      tl.fromTo("#o1", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 17.8);
+      tl.fromTo("#o2", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 17.95);
+      // "went dark years ago" — the cards lose their glow
+      tl.to(".obs .repo-streak", { opacity: 0.15, duration: 0.6 }, 18.3);
+      tl.to(".obs", { borderColor: "rgba(255,176,74,0.1)", backgroundColor: "rgba(14,14,26,0.9)", duration: 0.6 }, 18.3);
+      // "clean those up" — open & unstar the first one
+      tl.to("#cursor5", { x: 800, y: 710, duration: 0.5, ease: "power3.inOut" }, 18.95);
+      tl.to(["#cursor5", "#o1 .unstar"], { scale: 0.92, duration: 0.08, yoyo: true, repeat: 1, ease: "power2.in" }, 19.52);
+      tl.to("#o1", { opacity: 0, y: 40, scale: 0.94, duration: 0.4, ease: "power2.in" }, 19.62);
+      tl.to("#cnt37", { yPercent: -100, opacity: 0, duration: 0.3, ease: "power2.inOut" }, 19.7);
+      tl.to("#cnt36", { yPercent: 0, opacity: 1, duration: 0.3, ease: "power2.inOut" }, 19.7);
+      tl.to("#cursor5", { opacity: 0, duration: 0.3 }, 20.0);
+      tl.to("#s5-inner", { opacity: 0, duration: 0.3, ease: "power1.in" }, 20.3);
+
+      // ════ Scene 6 — outro (20.6 – 24.5) ════
+      tl.fromTo("#s6-logo", { scale: 0.4, rotation: 20, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }, 20.7);
+      tl.fromTo("#s6-word", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 20.88);
+      // beat-locked: 22.37s strong cue — tagline lands with the narrator
+      tl.fromTo("#s6-tag", { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, 22.25);
+      tl.fromTo("#s6-url", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 22.7);
+      tl.fromTo("#s6-gh", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 22.85);
+      tl.fromTo("#s6-gh .gs", { rotation: 0 }, { rotation: 72, scale: 1.2, duration: 0.5, ease: "back.out(2)" }, 23.3);
+
+      // ── Audio-reactive: music bass/RMS makes the nebula and logo halos breathe; carets blink ──
+      const AD = window.AUDIO_DATA;
+      const nebA = document.querySelector("#neb-a .core");
+      const nebC = document.querySelector("#neb-c .core");
+      const halos = [document.getElementById("s2-halo"), document.getElementById("s6-halo")];
+      const carets = [document.getElementById("s3-caret"), document.getElementById("s4-caret")];
+      const drive = { t: 0 };
+      tl.to(drive, { t: 24.5, duration: 24.5, ease: "none", onUpdate() {
+        const f = Math.min(AD.rms.length - 1, Math.max(0, Math.round(drive.t * AD.fps)));
+        const bass = AD.bass[f], rms = AD.rms[f];
+        nebA.style.opacity = (0.16 + 0.14 * bass).toFixed(3);
+        nebC.style.opacity = (0.1 + 0.1 * rms).toFixed(3);
+        const hs = (1 + 0.1 * bass).toFixed(3);
+        halos.forEach((h) => { h.style.transform = `scale(${hs})`; h.style.opacity = (0.7 + 0.3 * rms).toFixed(3); });
+        const on = (drive.t % 0.8) < 0.45 ? "1" : "0";
+        carets.forEach((c) => { c.style.opacity = on; });
+      } }, 0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

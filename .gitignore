@@ -407,3 +407,11 @@ FodyWeavers.xsd
 /.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.ask.xml
 /.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.ask2agent.xml
 /.idea/.idea.github-star-search.dir/.idea/copilot.data.migration.edit.xml
+
+# /brag launch video project: the web encode lives in wwwroot/video/.
+# The full-quality render is local only. The music bed ships with the /brag plugin,
+# and its redistribution terms are unverified, so it isn't committed.
+/brag-output/brag.mp4
+/brag-output/composition/assets/music/*.mp3
+/brag-output/composition/snapshots/
+/brag-output/composition/.hyperframes/

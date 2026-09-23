@@ -1,0 +1,1 @@
+Starred 500+ repos on GitHub and can't find a single one? I made GitHub Star Search: type your username and get instant full-text search across the names, descriptions and READMEs of everything you've starred. It'll even point out the stars that went dark. ⭐🔭 gss.janskala.cz
